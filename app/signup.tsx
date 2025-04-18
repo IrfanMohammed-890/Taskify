@@ -75,7 +75,7 @@ import {Link} from 'expo-router';
         </View>
   
         <ThemedText>
-            Already have an account? <Link href="/+not-found"> Login </Link>
+            Already have an account? <Link href="/login"> Login </Link>
         </ThemedText>
         </ScrollView>
     );
