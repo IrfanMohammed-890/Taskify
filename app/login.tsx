@@ -8,25 +8,26 @@ export default function LoginScreen() {
     const [password, setPassword] =useState('');
 
     return (
-        <ScrollView contentContainerStyle={StyleSheet.container}>
-        <ThemedText type="title">Login</ThemedText>
-        
+        <ScrollView contentContainerStyle={styles.container}>
+        <ThemedText type="title">Log in</ThemedText>
+
+        <View style={{margin:20}}></View> 
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder="Email" // Email address 
           keyboardType="email-address"
           value={email}
           onChangeText={setEmail} />
               
           <TextInput
           style={styles.input}
-          placeholder="Password"
+          placeholder="Password" //password
           secureTextEntry
           value={password}
           onChangeText={setPassword} />
 
           <View style={styles.button}>
-           <Button title="Login" onPress={() =>{}} />
+           <Button title="Log in" onPress={() =>{}} /> 
            </View>
 
            <ThemedText>
