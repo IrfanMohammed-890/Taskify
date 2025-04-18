@@ -1,3 +1,4 @@
+//Sigup screen for new user registration
 import {ScrollView, StyleSheet, View, Button, TextInput} from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
@@ -6,6 +7,7 @@ import {Link} from 'expo-router';
 
 
     export default function SignupScreen() {
+        //This part handle the input values 
         const [form, setForm] = useState({
             firstName:'',
             lastName:'',
@@ -15,7 +17,7 @@ import {Link} from 'expo-router';
             password:'',
             confirmPassword:'',
         });
-
+        //update individual inputs
      const handleChange = (field:string, value:string) => {
         setForm({...form,[field]:value});
      };
@@ -24,6 +26,7 @@ import {Link} from 'expo-router';
         <ScrollView contentContainerStyle={styles.container}>
         <ThemedText type="title">Create Account</ThemedText> 
         <View style={{margin:15}}></View>
+        {/*All inputs*/}
 
         <TextInput
         style={styles.input}
@@ -76,7 +79,7 @@ import {Link} from 'expo-router';
         </View>
   
         <ThemedText>
-            Already have an account? <Link href="/login"> Login </Link> 
+            Already have an account? <Link href="/login"> Login </Link>  {/* Link to login page*/}
         </ThemedText>
         </ScrollView>
     );

@@ -1,9 +1,12 @@
+//Login screen
+
 import React, {useState} from 'react';
 import {TextInput, Button, ScrollView, StyleSheet, View} from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import {Link} from 'expo-router';
 
 export default function LoginScreen() {
+    // Email and password 
     const [email, setEmail] = useState('');
     const [password, setPassword] =useState('');
 
@@ -32,7 +35,7 @@ export default function LoginScreen() {
 
            <ThemedText>
            Don't have an account?
-           <Link href="/signup"> Sign Up</Link>
+           <Link href="/signup"> Sign Up</Link>  {/*Link to signup screen*/}
            </ThemedText>
         </ScrollView>
     );

@@ -1,19 +1,23 @@
 import { Image, StyleSheet, Platform } from 'react-native';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import {Link} from 'expo-router';
 export default function HomeScreen() {
+  
   return (
+   <ThemedView style={styles.container}>
     <ThemedText>
       Not registered? <Link href="/signup">Go to Signup</Link>
     </ThemedText>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
+  container:{
+  paddingTop: 50,
+  },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -27,7 +31,7 @@ const styles = StyleSheet.create({
     height: 178,
     width: 290,
     bottom: 0,
-    left: 0,
+    left: 5,
     position: 'absolute',
   },
 });
