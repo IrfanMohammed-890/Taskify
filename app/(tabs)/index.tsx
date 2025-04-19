@@ -1,88 +1,109 @@
-import { StyleSheet, View, Pressable } from 'react-native';
+import { StyleSheet, View, Pressable, ScrollView } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Link } from 'expo-router';
 
 export default function HomeScreen() {
   return (
-    <ThemedView style={styles.container}>
-      
-      {/* Greeting title */}
-      <ThemedText type="title" style={styles.title}>
-        Welcome to Taskify 🎯
-      </ThemedText>
-
-      {/* Quote or short description */}
-      <ThemedText style={styles.subtitle}>
-        Organize your day, boost your productivity 🚀
-      </ThemedText>
-
-      {/* Card container */}
+    <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.card}>
-        <ThemedText style={styles.cardTitle}>New here?</ThemedText>
-        <ThemedText style={styles.cardText}>Create your free account to get started.</ThemedText>
+        <ThemedText type="title" style={styles.title}>
+          👋 Welcome to Taskify
+        </ThemedText>
+
+        <ThemedText style={styles.subtitle}>
+          Plan smart. Work hard. Conquer your day.
+        </ThemedText>
+
+        <View style={styles.divider} />
+
+        <ThemedText style={styles.sectionTitle}>🚀 New to Taskify?</ThemedText>
+        <ThemedText style={styles.sectionText}>
+          Create an account to start managing your tasks with ease.
+        </ThemedText>
 
         <Link href="/signup" asChild>
           <Pressable style={styles.button}>
             <ThemedText style={styles.buttonText}>Sign Up</ThemedText>
           </Pressable>
         </Link>
-      </View>
 
-      {/* Already registered */}
-      <ThemedText style={styles.loginLink}>
-        Already have an account? <Link href="/login">Login</Link>
-      </ThemedText>
-    </ThemedView>
+        <ThemedText style={styles.bottomLink}>
+          Already registered? <Link href="/login" style={styles.linkText}>Login</Link>
+        </ThemedText>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    padding: 24,
+    flexGrow: 1,
+    backgroundColor: '#f6f8fa',
     justifyContent: 'center',
-    gap: 24,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    opacity: 0.8,
+    alignItems: 'center',
+    paddingVertical: 60,
   },
   card: {
-    backgroundColor: '#eee',
-    padding: 20,
-    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderRadius: 18,
+    padding: 28,
+    width: '95%',
+    maxWidth: 400,
     shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 3,
-    gap: 10,
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 7,
+    gap: 16,
   },
-  cardTitle: {
+  title: {
+    textAlign: 'center',
+    fontSize: 28,
+    color: '#333',
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  subtitle: {
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#777',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e0e0e0',
+    marginVertical: 12,
+  },
+  sectionTitle: {
     fontSize: 18,
     fontWeight: '600',
+    color: '#222',
   },
-  cardText: {
+  sectionText: {
     fontSize: 14,
-    opacity: 0.7,
+    color: '#555',
   },
   button: {
     marginTop: 10,
     backgroundColor: '#2e86de',
-    paddingVertical: 10,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
   buttonText: {
     color: '#fff',
     fontWeight: '600',
+    fontSize: 16,
   },
-  loginLink: {
-    textAlign: 'center',
+  bottomLink: {
     marginTop: 16,
+    textAlign: 'center',
+    fontSize: 15,
+    color: '#888',
+  },
+  linkText: {
+    color: '#4f8cff',
+    fontWeight: 'bold',
+    textDecorationLine: 'underline',
   },
 });
