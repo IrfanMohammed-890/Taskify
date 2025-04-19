@@ -4,7 +4,8 @@ import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import React, {useState} from 'react';
 import {Link} from 'expo-router';
-
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import {auth} from '@/firebase/firebaseConfig';
 
     export default function SignupScreen() {
         //This part handle the input values 
@@ -20,6 +21,20 @@ import {Link} from 'expo-router';
         //update individual inputs
      const handleChange = (field:string, value:string) => {
         setForm({...form,[field]:value});
+     };
+     // adding the signup function 
+     const handleSignup = async () => {
+        if (form.password!==form.confirmPassword){
+            alert("Passwords do not match");
+        }
+        try {
+            const userCredential = await createUserWithEmailAndPassword(auth, form.email, form.password);
+            const user = userCredential.user;
+            console.log("Signup successfully!");
+        } catch(error:any){
+            console.error("Signup error:", error.message);
+            alert("Error creating account:" +error.message);
+        }
      };
 
     return (
@@ -75,7 +90,7 @@ import {Link} from 'expo-router';
          onChangeText={(text)=>handleChange('confirmPassword', text)} />
       
         <View style={styles.button}>
-            <Button title="Sign Up" onPress={() =>{}}/> 
+            <Button title="Sign Up" onPress={handleSignup}/> 
         </View>
   
         <ThemedText>
