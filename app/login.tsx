@@ -1,14 +1,31 @@
 //Login screen
 
 import React, {useState} from 'react';
-import {TextInput, Button, ScrollView, StyleSheet, View} from 'react-native';
+import {TextInput, Button, ScrollView, StyleSheet, View, Alert} from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import {Link} from 'expo-router';
+import {auth} from '@/firebase/firebaseConfig';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { ThemedView } from '@/components/ThemedView';
+import {router} from 'expo-router';
 
 export default function LoginScreen() {
     // Email and password 
     const [email, setEmail] = useState('');
     const [password, setPassword] =useState('');
+   
+    const handleLogin = async () => {
+        try{
+            await signInWithEmailAndPassword(auth, email, password);
+            router.replace('/'); //this will navigates to index.tsx
+            Alert.alert('Login successful! but need to add dashboard screen next');
+
+        } catch (error: any){
+            Alert.alert('Login Failed', error.message);
+        }
+    };
+
+
 
     return (
         <ScrollView contentContainerStyle={styles.container}>
@@ -30,7 +47,7 @@ export default function LoginScreen() {
           onChangeText={setPassword} />
 
           <View style={styles.button}>
-           <Button title="Log in" onPress={() =>{}} /> 
+           <Button title="Log in" onPress={handleLogin} /> 
            </View>
 
            <ThemedText>
