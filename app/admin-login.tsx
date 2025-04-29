@@ -14,14 +14,13 @@ import { Controller, useForm } from 'react-hook-form';
 import { Ionicons } from '@expo/vector-icons';
 import Logo from '@/components/Logo';
 
-export default function LoginScreen() {
+export default function AdminLoginScreen() {
   const router = useRouter();
   const { control, handleSubmit, formState: { errors } } = useForm();
   const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = (data: any) => {
     console.log('Login Data:', data);
-    router.push('/(user)')
   };
 
   return (
@@ -33,7 +32,7 @@ export default function LoginScreen() {
       <Logo />
 
       <View className="my-10">
-        <Text className="text-3xl font-bold text-gray-800">Welcome Back</Text>
+        <Text className="text-3xl font-bold text-gray-800">Welcome Back Admin</Text>
         <Text className="text-base text-gray-500 mt-2">Login to your account</Text>
       </View>
 
@@ -103,26 +102,6 @@ export default function LoginScreen() {
       >
         <Text className="text-white text-center font-semibold text-base">Login</Text>
       </TouchableOpacity>
-
-      {/* <Pressable onPress={() => router.push('/signup')} className="mt-4"> */}
-      <Text className="text-center text-blue-500 text-sm mt-8">
-        Don't have an account?
-      </Text>
-      {/* </Pressable> */}
-
-      <Pressable
-        onPress={() => router.push('/signup')}
-        className="bg-green-600 mt-6 p-4 rounded-xl shadow-md active:opacity-80"
-      >
-        <Text className="text-white text-center font-semibold text-base">Create Account</Text>
-      </Pressable>
-
-
-      <Pressable onPress={() => router.push('/admin-login')} className="mt-4">
-        <Text className="text-center text-blue-500 text-sm">
-          <Text className="">Admin Login</Text>
-        </Text>
-      </Pressable>
     </KeyboardAvoidingView>
   );
 }
