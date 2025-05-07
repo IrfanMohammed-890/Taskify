@@ -43,6 +43,12 @@ export default function FeatureScreen() {
       description: "Soothing sounds to help you unwind and relax.",
       route: "/(admin)/meditation",
     },
+    {
+      id: "7",
+      name: "Meditation Location",
+      description: "Soothing sounds to help you unwind and relax.",
+      route: "/(admin)/meditation-location",
+    },
   ];
 
   return (
