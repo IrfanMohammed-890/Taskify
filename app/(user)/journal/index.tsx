@@ -15,9 +15,10 @@ export default function JournalScreen() {
         {[...Array(10)].map((_, index) => (
           <JournalCard
             key={index}
+            id={`$index`}
             title="Peace mind helps you to grow"
             description={`Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text since the 1500s. It has survived centuries, including the leap into electronic typesetting.`}
-            onPress={() => console.log('clicked')}
+            // onPress={() => console.log('clicked')}
           />
         ))}
 
