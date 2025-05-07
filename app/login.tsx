@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,15 +13,62 @@ import { StatusBar } from 'expo-status-bar';
 import { Controller, useForm } from 'react-hook-form';
 import { Ionicons } from '@expo/vector-icons';
 import Logo from '@/components/Logo';
+import { login } from '@/service/authService';
+import Toast from 'react-native-toast-message';
+import { FirebaseError } from 'firebase/app';
+import { useUserAuth } from '@/context/UserAuthContext';
 
 export default function LoginScreen() {
+  const { user, loading } = useUserAuth();
   const router = useRouter();
-  const { control, handleSubmit, formState: { errors } } = useForm();
+  const { control, handleSubmit, formState: { errors } } = useForm({
+    defaultValues: {
+      email: '',
+      password: '',
+    }
+  });
   const [showPassword, setShowPassword] = useState(false);
+  const onSubmit = async (data: any) => {
+    try {
+      await login(data.email, data.password);
+      Toast.show({
+        type: 'success',
+        text1: 'Login Successful',
+        text2: `Welcome back!`,
+      });
 
-  const onSubmit = (data: any) => {
-    console.log('Login Data:', data);
-    router.push('/(user)')
+      router.push('/(user)');
+    } catch (error: any) {
+      console.log('error', error);
+
+      let message = 'Something went wrong. Please try again.';
+
+      if (error instanceof FirebaseError) {
+        switch (error.code) {
+          case 'auth/user-not-found':
+            message = 'No account found with this email.';
+            break;
+          case 'auth/invalid-credential':
+            message = 'Invalid credentials.';
+            break;
+          case 'auth/wrong-password':
+            message = 'Incorrect password.';
+            break;
+          case 'auth/invalid-email':
+            message = 'Invalid email format.';
+            break;
+          case 'auth/too-many-requests':
+            message = 'Too many login attempts. Please try again later.';
+            break;
+        }
+      }
+
+      Toast.show({
+        type: 'error',
+        text1: 'Login Failed',
+        text2: message,
+      });
+    }
   };
 
   return (
@@ -92,7 +139,7 @@ export default function LoginScreen() {
         />
       </View>
       <Pressable onPress={() => router.push('/forget-password')} className="mt-4">
-        <Text className="text-center text-blue-500 text-sm text-right">
+        <Text className=" text-blue-500 text-sm text-right">
           Forget password?
         </Text>
       </Pressable>
@@ -101,7 +148,7 @@ export default function LoginScreen() {
         onPress={handleSubmit(onSubmit)}
         className="bg-blue-600 mt-6 p-4 rounded-xl shadow-md active:opacity-80"
       >
-        <Text className="text-white text-center font-semibold text-base">Login</Text>
+        <Text className="text-white text-center font-semibold text-base">{loading ? "Logging in" : 'Login'}</Text>
       </TouchableOpacity>
 
       {/* <Pressable onPress={() => router.push('/signup')} className="mt-4"> */}
@@ -118,7 +165,7 @@ export default function LoginScreen() {
       </Pressable>
 
 
-      <Pressable onPress={() => router.push('/admin-login')} className="mt-4">
+      <Pressable onPress={() => router.push(`/admin-login` as any)} className="mt-4">
         <Text className="text-center text-blue-500 text-sm">
           <Text className="">Admin Login</Text>
         </Text>
