@@ -7,6 +7,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 
 export default function ProfileScreen() {
   return (
@@ -14,9 +15,12 @@ export default function ProfileScreen() {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>My Profile</Text>
-        <TouchableOpacity style={styles.editButton}>
-          <Ionicons name="create-outline" size={20} color="#4f46e5" />
-          <Text style={styles.editText}>Edit</Text>
+        <TouchableOpacity
+          className="flex items-center"
+          onPress={() => router.push('/login' as any)}
+          style={styles.logoutButton}>
+          <Ionicons name="log-out" size={20} color="#4f46e5" />
+          <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
 
@@ -45,9 +49,24 @@ export default function ProfileScreen() {
         </View>
       </View>
 
+
+      <TouchableOpacity
+        style={styles.editButton}
+        onPress={() => router.push('/(user)/profile/update-profile' as any)}
+
+      >
+        <Text style={styles.changePasswordText}>Edit Profile</Text>
+      </TouchableOpacity>
       {/* SOS Button */}
       <TouchableOpacity style={styles.sosButton}>
         <Text style={styles.sosText}>Update SOS Details</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.passwordButton}
+        onPress={() => router.push('/(user)/profile/change-password' as any)}
+      >
+        <Text style={styles.changePasswordText}>Change password</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -113,16 +132,24 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#3730a3",
   },
-  editButton: {
+  logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
   },
-  editText: {
+  logoutText: {
     color: "#4f46e5",
     fontWeight: "600",
     fontSize: 16,
     marginLeft: 4,
+  },
+  editButton: {
+    backgroundColor: "blue",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 24,
+    elevation: 2,
   },
   card: {
     backgroundColor: "#ffffff",
@@ -184,6 +211,19 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   sosText: {
+    color: "#ffffff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  passwordButton: {
+    backgroundColor: "green",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 24,
+    elevation: 2,
+  },
+  changePasswordText: {
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",

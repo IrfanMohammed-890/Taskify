@@ -1,102 +1,117 @@
-// import { View, Text, ScrollView, StyleSheet } from 'react-native';
-
-// export default function UserList() {
-//   const users = [
-//     { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Admin' },
-//     { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'User' },
-//     { id: 3, name: 'Bob Johnson', email: 'bob@example.com', role: 'User' },
-//   ];
-
-//   return (
-//     <View style={styles.container}>
-//       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-//         <View>
-//           {/* Table Header */}
-//           <View style={[styles.row, styles.headerRow]}>
-//             <Text style={[styles.cell, styles.headerText]}>Name</Text>
-//             <Text style={[styles.cell, styles.headerText]}>Email</Text>
-//             <Text style={[styles.cell, styles.headerText]}>Role</Text>
-//           </View>
-
-//           {/* Table Data */}
-//           {users.map((user) => (
-//             <View key={user.id} style={styles.row}>
-//               <Text style={styles.cell}>{user.name}</Text>
-//               <Text style={styles.cell}>{user.email}</Text>
-//               <Text style={styles.cell}>{user.role}</Text>
-//             </View>
-//           ))}
-//         </View>
-//       </ScrollView>
-//     </View>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: {
-//     backgroundColor: '#F9FAFB',
-//     flex: 1,
-//   },
-//   heading: {
-//     fontSize: 24,
-//     fontWeight: 'bold',
-//     color: '#1F2937',
-//     marginBottom: 16,
-//   },
-//   row: {
-//     flexDirection: 'row',
-//     backgroundColor: 'white',
-//     paddingVertical: 12,
-//     paddingHorizontal: 8,
-//     borderBottomWidth: 1,
-//     borderBottomColor: '#E5E7EB',
-//     alignItems: 'center',
-//     minWidth: 600,
-//   },
-//   headerRow: {
-//     backgroundColor: '#EEF2FF',
-//     borderTopLeftRadius: 12,
-//     borderTopRightRadius: 12,
-//   },
-//   cell: {
-//     flex: 1,
-//     fontSize: 14,
-//     color: '#374151',
-//     paddingHorizontal: 8,
-//   },
-//   headerText: {
-//     fontWeight: '600',
-//     color: '#4F46E5',
-//   },
-// });
-
-
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, ActivityIndicator, FlatList } from 'react-native';
 import { Trash2 } from 'lucide-react-native';
+import { deleteUser } from '@/service/user';
+import Toast from 'react-native-toast-message';
+import ConfirmDialog from './ui/ConfirmDialog';
 
-export default function UserList() {
-  const users = [
-    { id: 1, name: 'John Doe', email: 'john@example.com', role: 'Admin' },
-    { id: 2, name: 'Jane Smith', email: 'jane@example.com', role: 'User' },
-    { id: 3, name: 'Bob Johnson', email: 'bob@example.com', role: 'User' },
-  ];
+export default function UserList({
+  users,
+  searchText,
+  setSearchText,
+  loadMeditations,
+  loading,
+  hasMore,
+}: {
+  users: any[];
+  searchText: string;
+  setSearchText: (text: string) => void;
+  loadMeditations: (reset?: boolean) => void;
+  loading: boolean;
+  hasMore: boolean;
+}) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    if (!selectedId) return;
+    setShowConfirm(false);
+    try {
+      await deleteUser(selectedId);
+      Toast.show({
+        type: "success",
+        text1: "Deleted",
+        text2: "User deleted successfully!",
+      });
+      loadMeditations(true);
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to delete user.",
+      });
+    } finally {
+      setShowConfirm(false);
+      setSelectedId(null);
+    }
+  };
+
+  const renderItem = ({ item }: { item: any; }) => {
+    return (
+      <View key={item.id} style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.name}>{item.firstName} {item.lastName}</Text>
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedId(item.id);
+              setShowConfirm(true);
+            }}
+          >
+            <Trash2 size={20} color="#EF4444" />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.detail}>Email: {item.email}</Text>
+        <Text style={styles.detail}>Phone Number: {item.contactNumber}</Text>
+
+      </View>
+    );
+  };
+
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={{ padding: 5 }}>
-        {users.map((user) => (
-          <View key={user.id} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.name}>{user.name}</Text>
-              <TouchableOpacity onPress={() => console.log('Delete user', user.id)}>
-                <Trash2 size={20} color="#EF4444" />
+      <TextInput
+        style={styles.searchBar}
+        placeholder="Search by name or email"
+        value={searchText}
+        onChangeText={setSearchText}
+      />
+      <FlatList
+        data={users}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        ListFooterComponent={
+          <>
+            {loading && (
+              <ActivityIndicator
+                size="small"
+                color="#6366F1"
+                style={{ marginTop: 10 }}
+              />
+            )}
+            {!loading && hasMore && (
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                onPress={() => loadMeditations()}
+              >
+                <Text style={styles.loadMoreText}>Load More</Text>
               </TouchableOpacity>
-            </View>
-            <Text style={styles.detail}>Email: {user.email}</Text>
-            <Text style={styles.detail}>Role: {user.role}</Text>
-          </View>
-        ))}
-      </ScrollView>
+            )}
+            {!loading && users?.length === 0 && (
+              <Text style={styles.noResults}>No users found.</Text>
+            )}
+          </>
+        }
+        contentContainerStyle={{ padding: 10 }}
+      />
+
+      <ConfirmDialog
+        visible={showConfirm}
+        message="Do you really want to delete this user?"
+        onCancel={() => setShowConfirm(false)}
+        onConfirm={handleDelete}
+        loading={loading}
+      />
     </View>
   );
 }
@@ -104,6 +119,15 @@ export default function UserList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  searchBar: {
+    height: 40,
+    borderColor: '#E5E7EB',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+    backgroundColor: '#F9FAFB',
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -114,7 +138,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
     shadowRadius: 4,
-    elevation: 2, // for Android
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -131,5 +155,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#4B5563',
     marginTop: 2,
+  },
+  noResults: {
+    textAlign: 'center',
+    color: '#9CA3AF',
+    marginTop: 20,
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  pageButton: {
+    padding: 10,
+    backgroundColor: '#E5E7EB',
+    borderRadius: 8,
+  },
+  pageNumber: {
+    fontSize: 16,
+    color: '#374151',
+  },
+  disabled: {
+    opacity: 0.4,
+  },
+
+  loadMoreButton: {
+    backgroundColor: "#4F46E5",
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 10,
+    alignItems: "center",
+  },
+  loadMoreText: {
+    color: "#FFF",
   },
 });
