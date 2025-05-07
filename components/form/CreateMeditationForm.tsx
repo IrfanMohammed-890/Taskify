@@ -1,9 +1,35 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Switch, StyleSheet } from 'react-native';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
-import { PlusCircle, Trash2 } from 'lucide-react-native'; // You can use any icons you like
+import { PlusCircle, Trash2 } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import Toast from 'react-native-toast-message';
+import { createMeditation, updateMeditation } from '@/service/meditation';
 
-export default function CreateMeditationForm() {
-  const { control, handleSubmit } = useForm({
+
+type FormData = {
+  meditationName: string;
+  description: string;
+  steps: { step: string; }[];
+  isPaid: boolean;
+};
+
+
+export default function CreateMeditationForm({
+  setIsModalVisible,
+  reloadMeditations,
+  editingMeditation,
+}: {
+  setIsModalVisible: (visible: boolean) => void;
+  reloadMeditations: () => void;
+  editingMeditation: any | null;
+}) {
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isValid },
+  } = useForm<FormData>({
+    mode: 'onChange',
     defaultValues: {
       meditationName: '',
       description: '',
@@ -17,20 +43,60 @@ export default function CreateMeditationForm() {
     name: 'steps',
   });
 
-  const onSubmit = (data: any) => {
-    console.log('Meditation Data:', data);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const onSubmit = async (data: any) => {
+    try {
+      setIsLoading(true);
+
+      editingMeditation ? await updateMeditation(editingMeditation.id, data) : await createMeditation(data);
+      setIsModalVisible(false);
+      reset();
+      Toast.show({
+        type: 'success',
+        text1: editingMeditation ? 'Meditation updated' : 'Meditation saved',
+      });
+      reloadMeditations();
+    } catch (error: any) {
+      console.error("Error:", error.message);
+      Toast.show({
+        type: 'error',
+        text1: 'Error Saving Meditation',
+        text2: error.message || 'Please try again.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  useEffect(() => {
+    if (editingMeditation) {
+      reset({
+        meditationName: editingMeditation.meditationName || '',
+        description: editingMeditation.description || '',
+        steps: Array.isArray(editingMeditation.steps) && editingMeditation.steps.length > 0
+          ? editingMeditation.steps.map((step: string) => ({ step }))
+          : [{ step: '' }],
+        isPaid: editingMeditation.isPaid ?? false,
+      });
+    }
+  }, [editingMeditation, reset]);
+
+
+
+
   return (
-    <ScrollView>
+    <ScrollView contentContainerStyle={{ padding: 16 }}>
       {/* Meditation Name */}
       <Text style={styles.label}>Meditation Name</Text>
       <Controller
         control={control}
         name="meditationName"
+        rules={{ required: 'Meditation name is required' }}
         render={({ field: { onChange, value } }) => (
           <TextInput
             style={styles.input}
+            className={`w-full border ${errors.meditationName ? 'border-red-500' : 'border-gray-300'} p-3 pr-12 rounded-xl bg-gray-50 text-gray-800`}
             placeholder="Enter meditation name"
             value={value}
             onChangeText={onChange}
@@ -43,9 +109,11 @@ export default function CreateMeditationForm() {
       <Controller
         control={control}
         name="description"
+        rules={{ required: 'Description is required' }}
         render={({ field: { onChange, value } }) => (
           <TextInput
             style={[styles.input, styles.textArea]}
+            className={`w-full border ${errors.description ? 'border-red-500' : 'border-gray-300'} p-3 pr-12 rounded-xl bg-gray-50 text-gray-800`}
             placeholder="Enter meditation description"
             value={value}
             onChangeText={onChange}
@@ -67,13 +135,24 @@ export default function CreateMeditationForm() {
           <Controller
             control={control}
             name={`steps.${index}.step`}
+            rules={{ required: 'Step is required' }}
             render={({ field: { onChange, value } }) => (
-              <TextInput
-                style={styles.stepInput}
-                placeholder={`Step ${index + 1}`}
-                value={value}
-                onChangeText={onChange}
-              />
+              <>
+                <TextInput
+                  style={[
+                    styles.stepInput,
+                    errors.steps?.[index]?.step && { borderColor: '#ef4444' },
+                  ]}
+                  placeholder={`Step ${index + 1}`}
+                  value={value}
+                  onChangeText={onChange}
+                />
+                {errors.steps?.[index]?.step && (
+                  <Text style={{ color: '#ef4444', marginTop: 4, fontSize: 12 }}>
+                    {errors.steps[index].step?.message}
+                  </Text>
+                )}
+              </>
             )}
           />
           <TouchableOpacity onPress={() => remove(index)}>
@@ -81,6 +160,7 @@ export default function CreateMeditationForm() {
           </TouchableOpacity>
         </View>
       ))}
+
 
       {/* Paid Option */}
       <View style={styles.paidContainer}>
@@ -102,10 +182,14 @@ export default function CreateMeditationForm() {
       {/* Submit Button */}
       <TouchableOpacity
         onPress={handleSubmit(onSubmit)}
-        style={styles.submitButton}
+        style={[styles.submitButton, (!isValid || isLoading) && { opacity: 0.5 }]}
+        disabled={!isValid || isLoading}
       >
-        <Text style={styles.submitText}>Save Meditation</Text>
+        <Text style={styles.submitText}>
+          {isLoading ? 'Submitting...' : editingMeditation ? 'Update Meditation' : 'Save Meditation'}
+        </Text>
       </TouchableOpacity>
+
     </ScrollView>
   );
 }

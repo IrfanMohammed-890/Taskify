@@ -1,63 +1,150 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, FlatList, ActivityIndicator } from 'react-native';
 import { Trash2, Pencil } from 'lucide-react-native';
+import { useState } from 'react';
+import Toast from 'react-native-toast-message';
+import { deleteMeditation } from '@/service/meditation';
+import ConfirmDialog from './ui/ConfirmDialog';
 
-export default function MeditationList() {
-  const pricingPlans = [
-    {
-      id: 1,
-      title: "Lorem ipshum",
-      description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolorum quaerat quas consequatur minima eveniet, nesciunt reprehenderit modi ex, voluptatum quia ut eum veritatis inventore quidem commodi. Perferendis aliquid officia nisi numquam in maiores reprehenderit maxime minima esse, blanditiis illum odio unde atque deserunt. Itaque fugit labore laudantium mollitia nemo hic?",
-      steps: ['Access to basic tools', '5 projects', 'Email support'],
-      isPaid: true
-    },
-    {
-      id: 2,
-      title: "Lorem ipshum",
-      description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolorum quaerat quas consequatur minima eveniet, nesciunt reprehenderit modi ex, voluptatum quia ut eum veritatis inventore quidem commodi. Perferendis aliquid officia nisi numquam in maiores reprehenderit maxime minima esse, blanditiis illum odio unde atque deserunt. Itaque fugit labore laudantium mollitia nemo hic?",
-      steps: ['Unlimited projects', 'Priority support', 'Team collaboration'],
-      isTrue: false
-    },
-    {
-      id: 3,
-      title: "Lorem ipshum",
-      description: "Lorem ipsum dolor sit amet consectetur adipisicing elit. Dolorum quaerat quas consequatur minima eveniet, nesciunt reprehenderit modi ex, voluptatum quia ut eum veritatis inventore quidem commodi. Perferendis aliquid officia nisi numquam in maiores reprehenderit maxime minima esse, blanditiis illum odio unde atque deserunt. Itaque fugit labore laudantium mollitia nemo hic?",
-      steps: ['Dedicated manager', 'Custom solutions', '24/7 Support'],
-      isPaid: true
-    },
-  ];
+interface MeditationListProps {
+  meditations: any[];
+  setSearchText: React.Dispatch<React.SetStateAction<string>>;
+  searchText: string;
+  loadMeditations: (reset?: boolean) => void;
+  loading: boolean;
+  hasMore: boolean;
+  onEdit: (meditation: any) => void;
+}
+
+const MeditationList: React.FC<MeditationListProps> = ({
+  meditations,
+  setSearchText,
+  searchText,
+  loadMeditations,
+  loading,
+  hasMore,
+  onEdit,
+}) => {
+
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    if (!selectedId) return;
+    setShowConfirm(false);
+    try {
+      await deleteMeditation(selectedId);
+      Toast.show({
+        type: "success",
+        text1: "Deleted",
+        text2: "Meditation deleted successfully!",
+      });
+      loadMeditations(true);
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to delete meditation.",
+      });
+    } finally {
+      setShowConfirm(false);
+      setSelectedId(null);
+    }
+  };
+
+
+  const renderItem = ({ item }: { item: any; }) => (
+    <View key={item.id} style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.title}>{item.meditationName}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => onEdit(item)} style={{ marginRight: 8 }}>
+            <Pencil size={20} color="#3B82F6" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedId(item.id);
+              setShowConfirm(true);
+            }}
+          >
+            <Trash2 size={20} color="#EF4444" />
+          </TouchableOpacity>
+
+        </View>
+      </View>
+
+      <Text style={styles.description}>{item.description}</Text>
+
+      <View style={styles.stepsContainer}>
+        {item?.steps?.map((step: any, index: number) => (
+          <Text key={index} style={styles.stepItem}>• {step}</Text>
+        ))}
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={{ padding: 5 }}>
-        {pricingPlans.map((plan) => (
-          <View key={plan.id} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.title}>{plan.title}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <TouchableOpacity onPress={() => console.log('Edit plan', plan.id)} style={{ marginRight: 8 }}>
-                  <Pencil size={20} color="#3B82F6" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => console.log('Delete plan', plan.id)}>
-                  <Trash2 size={20} color="#EF4444" />
-                </TouchableOpacity>
-              </View>
-            </View>
-            
-            <View style={styles.stepsContainer}>
-              {plan.steps.map((step, index) => (
-                <Text key={index} style={styles.stepItem}>• {step}</Text>
-              ))}
-            </View>
-          </View>
-        ))}
-      </ScrollView>
+
+      <TextInput
+        style={styles.searchBar}
+        placeholder="Search by meditation name"
+        value={searchText}
+        onChangeText={setSearchText}
+      />
+
+      <FlatList
+        data={meditations}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        ListFooterComponent={
+          <>
+            {loading && (
+              <ActivityIndicator
+                size="small"
+                color="#6366F1"
+                style={{ marginTop: 10 }}
+              />
+            )}
+            {!loading && hasMore && (
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                onPress={() => loadMeditations()}
+              >
+                <Text style={styles.loadMoreText}>Load More</Text>
+              </TouchableOpacity>
+            )}
+            {!loading && meditations.length === 0 && (
+              <Text style={styles.noResults}>No meditation found.</Text>
+            )}
+          </>
+        }
+        contentContainerStyle={{ padding: 10 }}
+      />
+
+      <ConfirmDialog
+        visible={showConfirm}
+        message="Do you really want to delete this meditation?"
+        onCancel={() => setShowConfirm(false)}
+        onConfirm={handleDelete}
+        loading={loading}
+      />
+
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  searchBar: {
+    height: 40,
+    borderColor: "#E5E7EB",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    margin: 10,
+    backgroundColor: "#F9FAFB",
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -68,7 +155,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 2, // Android shadow
+    elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -81,19 +168,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#1F2937',
   },
-  price: {
-    fontSize: 18,
-    color: '#4B5563',
-    marginBottom: 4,
-  },
-  expiry: {
+  description: {
     fontSize: 14,
-    color: '#6B7280',
+    color: '#4B5563',
     marginBottom: 8,
-  },
-  expiryDate: {
-    fontWeight: '600',
-    color: '#4F46E5',
   },
   stepsContainer: {
     marginTop: 8,
@@ -103,4 +181,30 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginBottom: 4,
   },
+  loading: {
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  noData: {
+    textAlign: 'center',
+    color: '#9CA3AF',
+    marginVertical: 20,
+  },
+  noResults: {
+    textAlign: "center",
+    color: "#9CA3AF",
+    marginTop: 20,
+  },
+  loadMoreButton: {
+    backgroundColor: "#4F46E5",
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 10,
+    alignItems: "center",
+  },
+  loadMoreText: {
+    color: "#FFF",
+  },
 });
+
+export default MeditationList;
