@@ -1,113 +1,223 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { Picker } from '@react-native-picker/picker'; // Make sure to install this package!
+import { PlusCircle, Trash2 } from 'lucide-react-native';
+import Toast from 'react-native-toast-message';
+import { createPricingPlans, updatePricingPlans } from '@/service/pricing-plans';
+import { Controller, useFieldArray, useForm } from 'react-hook-form';
 
-export default function CreatePricingPlanForm() {
-  const [planName, setPlanName] = useState('');
-  const [price, setPrice] = useState('');
-  const [duration, setDuration] = useState('Monthly');
-  const [expiryDate, setExpiryDate] = useState('');
-  const [features, setFeatures] = useState(['']);
+type FormData = {
+  planName: string;
+  duration: string;
+  features: { feature: string; }[];
+  price: string | number;
+  description: string;
+};
 
-  const handleAddFeature = () => {
-    setFeatures([...features, '']);
-  };
 
-  const handleFeatureChange = (text: string, index: number) => {
-    const newFeatures = [...features];
-    newFeatures[index] = text;
-    setFeatures(newFeatures);
-  };
+export default function CreatePricingPlanForm({
+  setIsModalVisible,
+  reloadPricingPlans,
+  editingPricingPlans,
+}: {
+  setIsModalVisible: (visible: boolean) => void;
+  reloadPricingPlans: () => void;
+  editingPricingPlans: any | null;
+}) {
 
-  const handleDurationChange = (value: string) => {
-    setDuration(value);
-    const today = new Date();
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isValid },
+  } = useForm<FormData>({
+    mode: 'onChange',
+    defaultValues: {
+      planName: '',
+      description: '',
+      price: '',
+      duration: 'Monthly',
+      features: [{ feature: '' }],
+    },
+  });
 
-    if (value === 'Monthly') {
-      today.setMonth(today.getMonth() + 1);
-    } else if (value === 'Three Month') {
-      today.setMonth(today.getMonth() + 3);
-    } else if (value === 'Yearly') {
-      today.setFullYear(today.getFullYear() + 1);
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'features',
+  });
+
+  const [isLoading, setIsLoading] = useState(false);
+
+  const onSubmit = async (data: any) => {
+    try {
+      setIsLoading(true);
+
+      editingPricingPlans ? await updatePricingPlans(editingPricingPlans.id, data) : await createPricingPlans(data);
+      setIsModalVisible(false);
+      reset();
+      Toast.show({
+        type: 'success',
+        text1: editingPricingPlans ? 'Pricing plans updated' : 'Pricing plans saved',
+      });
+      reloadPricingPlans();
+    } catch (error: any) {
+      console.error("Error:", error.message);
+      Toast.show({
+        type: 'error',
+        text1: 'Error Saving pricing plans',
+        text2: error.message || 'Please try again.',
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    const formattedDate = today.toISOString().split('T')[0]; // YYYY-MM-DD format
-    setExpiryDate(formattedDate);
   };
 
-  const handleSubmit = () => {
-    const newPlan = {
-      planName,
-      price,
-      duration,
-      expiryDate,
-      features: features.filter(f => f.trim() !== ''),
-    };
-    console.log('Created Plan:', newPlan);
-    // You can send this newPlan to your backend
-  };
+  useEffect(() => {
+    if (editingPricingPlans) {
+      reset({
+        planName: editingPricingPlans.planName || '',
+        duration: editingPricingPlans.duration || 'monthly',
+        features: Array.isArray(editingPricingPlans.features) && editingPricingPlans.features.length > 0
+          ? editingPricingPlans.features.map((feature: string) => ({ feature }))
+          : [{ feature: '' }],
+        price: editingPricingPlans.price,
+        description: editingPricingPlans.description || '',
+      });
+    }
+  }, [editingPricingPlans, reset]);
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>Create New Pricing Plan</Text>
-
-      {/* Plan Name */}
-      <TextInput
-        style={styles.input}
-        placeholder="Plan Name"
-        value={planName}
-        onChangeText={setPlanName}
+      <Text style={styles.label}>Plan Name</Text>
+      <Controller
+        control={control}
+        name="planName"
+        rules={{ required: 'Plan name is required' }}
+        render={({ field: { onChange, value } }) => (
+          <TextInput
+            style={styles.input}
+            className={`w-full border ${errors.planName ? 'border-red-500' : 'border-gray-300'} p-3 pr-12 rounded-xl bg-gray-50 text-gray-800`}
+            placeholder="Enter plan name"
+            value={value}
+            onChangeText={onChange}
+          />
+        )}
+      />
+      {/* Description */}
+      <Text style={styles.label}>Description</Text>
+      <Controller
+        control={control}
+        name="description"
+        rules={{ required: 'Description name is required' }}
+        render={({ field: { onChange, value } }) => (
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Enter pricing plan description"
+            value={value}
+            onChangeText={onChange}
+            multiline
+          />
+        )}
+      />
+      <Text style={styles.label}>Price</Text>
+      <Controller
+        control={control}
+        name="price"
+        rules={{
+          required: 'Price is required',
+          pattern: {
+            value: /^[0-9]*$/,
+            message: 'Only numbers are allowed',
+          }
+        }}
+        render={({ field: { onChange, value } }) => (
+          <TextInput
+            style={styles.input}
+            className={`w-full border ${errors.price ? 'border-red-500' : 'border-gray-300'} p-3 pr-12 rounded-xl bg-gray-50 text-gray-800`}
+            placeholder="Enter amount"
+            value={value as any}
+            keyboardType="numeric"
+            onChangeText={(text) => {
+              const numericText = text.replace(/[^0-9]/g, '');
+              onChange(numericText);
+            }}
+          />
+        )}
       />
 
-      {/* Plan Price */}
-      <TextInput
-        style={styles.input}
-        placeholder="Price (e.g., 29)"
-        keyboardType="numeric"
-        value={price}
-        onChangeText={setPrice}
+      <Text style={styles.label}>Duration</Text>
+      <Controller
+        control={control}
+        name="duration"
+        rules={{ required: 'Duration is required' }}
+        render={({ field: { onChange, value } }) => (
+          <View style={styles.dropdownContainer}>
+            <Picker
+              selectedValue={value}
+              onValueChange={onChange}
+              style={styles.picker}
+            >
+              <Picker.Item label="Monthly" value="Monthly" />
+              <Picker.Item label="Three Month" value="Three Month" />
+              <Picker.Item label="Yearly" value="Yearly" />
+            </Picker>
+          </View>
+        )}
       />
 
-      {/* Plan Duration */}
-      <View style={styles.dropdownContainer}>
-        <Picker
-          selectedValue={duration}
-          onValueChange={(itemValue) => handleDurationChange(itemValue)}
-          style={styles.picker}
-        >
-          <Picker.Item label="Monthly" value="Monthly" />
-          <Picker.Item label="Three Month" value="Three Month" />
-          <Picker.Item label="Yearly" value="Yearly" />
-        </Picker>
-      </View>
 
-      {/* Show Expiry Date */}
-      {expiryDate !== '' && (
-        <Text style={styles.expiryText}>
-          Plan Expiry Date: <Text style={{ fontWeight: 'bold' }}>{expiryDate}</Text>
-        </Text>
-      )}
 
       {/* Features */}
-      <Text style={styles.subheading}>Features</Text>
-      {features.map((feature, index) => (
-        <TextInput
-          key={index}
-          style={styles.input}
-          placeholder={`Feature ${index + 1}`}
-          value={feature}
-          onChangeText={(text) => handleFeatureChange(text, index)}
-        />
+      <View style={styles.stepsContainer}>
+        <Text style={styles.label}>Features</Text>
+        <TouchableOpacity onPress={() => append({ feature: '' })}>
+          <PlusCircle size={28} color="#4F46E5" />
+        </TouchableOpacity>
+      </View>
+
+      {fields.map((field, index) => (
+        <View key={field.id} style={styles.stepContainer}>
+          <Controller
+            control={control}
+            name={`features.${index}.feature`}
+            rules={{ required: 'Step is required' }}
+            render={({ field: { onChange, value } }) => (
+              <>
+                <TextInput
+                  style={[
+                    styles.stepInput,
+                    errors.features?.[index]?.feature && { borderColor: '#ef4444' },
+                  ]}
+                  placeholder={`Feature ${index + 1}`}
+                  value={value}
+                  onChangeText={onChange}
+                />
+                {errors.features?.[index]?.feature && (
+                  <Text style={{ color: '#ef4444', marginTop: 4, fontSize: 12 }}>
+                    {errors.features[index].feature?.message}
+                  </Text>
+                )}
+              </>
+            )}
+          />
+          <TouchableOpacity onPress={() => remove(index)}>
+            <Trash2 size={24} color="#ef4444" />
+          </TouchableOpacity>
+        </View>
       ))}
 
-      {/* Add another feature */}
-      <TouchableOpacity style={styles.addButton} onPress={handleAddFeature}>
-        <Text style={styles.addButtonText}>+ Add Feature</Text>
-      </TouchableOpacity>
+
 
       {/* Submit Button */}
-      <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-        <Text style={styles.submitButtonText}>Create Plan</Text>
+      <TouchableOpacity
+        onPress={handleSubmit(onSubmit)}
+        style={[styles.submitButton, (!isValid || isLoading) && { opacity: 0.5 }]}
+        disabled={!isValid || isLoading}
+      >
+        <Text style={styles.submitText}>
+          {isLoading ? 'Submitting...' : editingPricingPlans ? 'Update pricing plan' : 'Save pricing plan'}
+        </Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -115,8 +225,17 @@ export default function CreatePricingPlanForm() {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#F9FAFB',
     flexGrow: 1,
+  },
+  label: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4F46E5',
+    marginBottom: 8,
+  },
+  textArea: {
+    height: 128,
+    textAlignVertical: 'top',
   },
   heading: {
     fontSize: 24,
@@ -146,7 +265,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     borderColor: '#E5E7EB',
-    marginBottom: 12,
+    marginBottom: 10,
     overflow: 'hidden',
   },
   picker: {
@@ -168,14 +287,44 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   submitButton: {
-    backgroundColor: '#6366F1',
-    paddingVertical: 14,
+    backgroundColor: '#4F46E5',
     borderRadius: 16,
+    paddingVertical: 12,
+    marginTop: 24,
     alignItems: 'center',
   },
-  submitButtonText: {
+  submitText: {
     color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  deleteButton: {
+    marginLeft: 8,
+    padding: 8,
+  },
+  stepsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  stepContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  stepInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 12,
   },
 });

@@ -1,62 +1,126 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, ActivityIndicator, FlatList, TextInput } from 'react-native';
 import { Trash2, Pencil } from 'lucide-react-native';
+import { deletePricingPlans } from '@/service/pricing-plans';
+import Toast from 'react-native-toast-message';
+import { useState } from 'react';
+import ConfirmDialog from './ui/ConfirmDialog';
 
-export default function PricingPlansList() {
-  const pricingPlans = [
-    {
-      id: 1,
-      planName: 'Starter Plan',
-      price: '19',
-      duration: 'Monthly',
-      expiryDate: '2025-05-27',
-      features: ['Access to basic tools', '5 projects', 'Email support'],
-    },
-    {
-      id: 2,
-      planName: 'Pro Plan',
-      price: '49',
-      duration: 'Three Month',
-      expiryDate: '2025-07-27',
-      features: ['Unlimited projects', 'Priority support', 'Team collaboration'],
-    },
-    {
-      id: 3,
-      planName: 'Enterprise Plan',
-      price: '99',
-      duration: 'Yearly',
-      expiryDate: '2026-04-27',
-      features: ['Dedicated manager', 'Custom solutions', '24/7 Support'],
-    },
-  ];
+export default function PricingPlansList({
+  pricingPlans,
+  searchText,
+  setSearchText,
+  loadPricingPlans,
+  loading,
+  hasMore,
+  onEdit
+}: {
+  pricingPlans: any[];
+  searchText: string;
+  setSearchText: (text: string) => void;
+  loadPricingPlans: (reset?: boolean) => void;
+  loading: boolean;
+  hasMore: boolean;
+  onEdit: (location: any) => void;
+}) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    if (!selectedId) return;
+    setShowConfirm(false);
+    try {
+      await deletePricingPlans(selectedId);
+      Toast.show({
+        type: "success",
+        text1: "Deleted",
+        text2: "Pricing deleted successfully!",
+      });
+      loadPricingPlans(true);
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to delete pricing plans.",
+      });
+    } finally {
+      setShowConfirm(false);
+      setSelectedId(null);
+    }
+  };
+
+  const renderItem = ({ item }: { item: any; }) => (
+    <View key={item.id} style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.planName}>{item.planName}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => onEdit(item)} style={{ marginRight: 8 }}>
+            <Pencil size={20} color="#3B82F6" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedId(item.id);
+              setShowConfirm(true);
+            }}
+          >
+            <Trash2 size={20} color="#EF4444" />
+          </TouchableOpacity>
+        </View>
+      </View>
+      <Text style={styles.price}>${item.price} / {item.duration}</Text>
+      <Text style={styles.price} className='my-2 text-sm'>{item.description}</Text>
+      <View style={styles.stepsContainer}>
+        {item?.features?.map((feature: any, index: number) => (
+          <Text key={index} style={styles.stepItem}>• {feature}</Text>
+        ))}
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={{ padding: 16 }}>
-        {pricingPlans.map((plan) => (
-          <View key={plan.id} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.planName}>{plan.planName}</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <TouchableOpacity onPress={() => console.log('Edit plan', plan.id)} style={{ marginRight: 8 }}>
-                  <Pencil size={20} color="#3B82F6" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => console.log('Delete plan', plan.id)}>
-                  <Trash2 size={20} color="#EF4444" />
-                </TouchableOpacity>
-              </View>
-            </View>
+      <TextInput
+        style={styles.searchBar}
+        placeholder="Search by pricing title"
+        value={searchText}
+        onChangeText={setSearchText}
+      />
 
-            <Text style={styles.price}>${plan.price} / {plan.duration}</Text>
-            <Text style={styles.expiry}>Expires on: <Text style={styles.expiryDate}>{plan.expiryDate}</Text></Text>
+      <FlatList
+        data={pricingPlans}
+        renderItem={renderItem}
+        keyExtractor={(item: any) => item.id.toString()}
+        ListFooterComponent={
+          <>
+            {loading && (
+              <ActivityIndicator
+                size="small"
+                color="#6366F1"
+                style={{ marginTop: 10 }}
+              />
+            )}
+            {!loading && hasMore && (
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                onPress={() => loadPricingPlans()}
+              >
+                <Text style={styles.loadMoreText}>Load More</Text>
+              </TouchableOpacity>
+            )}
+            {!loading && pricingPlans?.length === 0 && (
+              <Text style={styles.noResults}>No pricing plans found.</Text>
+            )}
+          </>
+        }
+        contentContainerStyle={{ padding: 10 }}
+      />
 
-            <View style={styles.featuresContainer}>
-              {plan.features.map((feature, index) => (
-                <Text key={index} style={styles.featureItem}>• {feature}</Text>
-              ))}
-            </View>
-          </View>
-        ))}
-      </ScrollView>
+      <ConfirmDialog
+        visible={showConfirm}
+        message="Do you really want to delete this pricing plans?"
+        onCancel={() => setShowConfirm(false)}
+        onConfirm={handleDelete}
+        loading={loading}
+      />
     </View>
   );
 }
@@ -64,7 +128,15 @@ export default function PricingPlansList() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+  },
+  searchBar: {
+    height: 40,
+    borderColor: "#E5E7EB",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    margin: 10,
+    backgroundColor: "#F9FAFB",
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -106,6 +178,29 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   featureItem: {
+    fontSize: 14,
+    color: '#374151',
+    marginBottom: 4,
+  },
+  loadMoreButton: {
+    backgroundColor: "#4F46E5",
+    paddingVertical: 10,
+    borderRadius: 8,
+    marginTop: 10,
+    alignItems: "center",
+  },
+  loadMoreText: {
+    color: "#FFF",
+  },
+  noResults: {
+    textAlign: "center",
+    color: "#9CA3AF",
+    marginTop: 20,
+  },
+  stepsContainer: {
+    marginTop: 8,
+  },
+  stepItem: {
     fontSize: 14,
     color: '#374151',
     marginBottom: 4,
