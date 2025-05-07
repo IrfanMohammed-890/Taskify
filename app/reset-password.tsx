@@ -17,7 +17,6 @@ import Logo from '@/components/Logo';
 
 
 type FormData = {
-  oldPassword: string;
   newPassword: string;
   confirmPassword: string;
 };
@@ -62,34 +61,6 @@ export default function ResetPasswordScreen() {
         </View>
 
         <View className="flex flex-col gap-4">
-          <Controller
-            control={control}
-            name="oldPassword"
-            rules={{ required: 'Old Password is required' }}
-            render={({ field: { onChange, onBlur, value } }) => (
-              <View className="relative">
-                <TextInput
-                  placeholder="Old Password"
-                  placeholderTextColor="#9ca3af"
-                  secureTextEntry={!showOldPassword}
-                  className={`w-full border ${errors.oldPassword ? 'border-red-500' : 'border-gray-300'} p-3 pr-12 rounded-xl bg-gray-50 text-gray-800`}
-                  value={value}
-                  onBlur={onBlur}
-                  onChangeText={onChange}
-                />
-                <TouchableOpacity
-                  onPress={() => setShowOldPassword(prev => !prev)}
-                  className="absolute right-3 top-3"
-                >
-                  <Ionicons
-                    name={showOldPassword ? 'eye-off-outline' : 'eye-outline'}
-                    size={22}
-                    color="#3b82f6"
-                  />
-                </TouchableOpacity>
-              </View>
-            )}
-          />
           <Controller
             control={control}
             name="newPassword"

@@ -21,6 +21,7 @@ export default function AdminLoginScreen() {
 
   const onSubmit = (data: any) => {
     console.log('Login Data:', data);
+    router.push('/(admin)');
   };
 
   return (

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import Animated, { FadeIn } from 'react-native-reanimated';
 // import { ArrowRight } from 'lucide-react-native';
+import "../firebase"
 
 const { width } = Dimensions.get('window');
 import { LinearGradient } from "expo-linear-gradient";
