@@ -1,20 +1,27 @@
 import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
+import { useRouter } from "expo-router";
 
 export default function JournalCard({
   title,
   description,
-  onPress,
+  id,
 }: {
   title: string;
   description: string;
-  onPress?: () => void;
+    id: string | number; // Expecting an ID for each journal entry
 }) {
+  const router = useRouter();
   const maxLength = 160;
   const shouldTruncate = description.length > maxLength;
   const shortText = shouldTruncate ? description.slice(0, maxLength).trim() : description;
 
+  const handlePress = () => {
+    // Navigate to the journal details page
+    router.push(`/journal/${1}` as any);
+  };
+
   return (
-    <TouchableOpacity onPress={onPress} style={styles.card}>
+    <TouchableOpacity onPress={handlePress} style={styles.card}>
       <Text style={styles.cardTitle} numberOfLines={1} ellipsizeMode="tail">
         {title}
       </Text>
