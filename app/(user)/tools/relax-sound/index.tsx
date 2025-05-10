@@ -1,87 +1,123 @@
-import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Pressable } from "react-native";
-import { Audio } from "expo-av"; // For audio playback
-
-const data = [
-  {
-    id: 1,
-    title: "Relax",
-    description:
-      "Learn how to focus on your breath to calm the mind and improve awareness. This is a foundational meditation technique useful for stress reduction. Lorem ipsum dolor sit amet consectetur adipisicing elit. Mollitia aliquam ipsa, facere explicabo cupiditate pariatur neque modi excepturi ut cum veniam officiis quisquam facilis eveniet iusto praesentium eum minus perferendis. Magnam autem atque voluptatum nesciunt sequi rerum vitae laborum vero eos, cupiditate, amet aspernatur eligendi. Quidem distinctio atque alias consectetur.",
-    isPaid: true,
-    track: "../assets/ocean.mp3", // Replace with your actual file path
-  },
-];
-
+import { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  ActivityIndicator,
+} from "react-native";
+import { fetchRelaxSoundList } from "@/service/relax-sound";
+import { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import YoutubePlayer from "react-native-youtube-iframe";
 
 export default function RelaxSoundScreen() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [relaxSounds, setRelaxSounds] = useState([]);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
 
-  async function handlePlayPause(track: any) {
-    if (sound) {
-      await sound.unloadAsync(); // Stop previous sound
-      setSound(null);
-    }
+  const PAGE_SIZE = 20;
 
-    if (isPlaying) {
-      setIsPlaying(false);
-    } else {
-      const { sound: newSound } = await Audio.Sound.createAsync(track);
-      setSound(newSound);
-      await newSound.playAsync();
-      setIsPlaying(true);
+  const loadRelaxSounds = async (reset = false) => {
+    try {
+      setLoading(true);
+      const response = await fetchRelaxSoundList(PAGE_SIZE, reset ? null : lastDoc);
+
+      if (reset) {
+        setRelaxSounds(response.data as any);
+      } else {
+        setRelaxSounds((prev) => [...prev, ...response.data] as any);
+      }
+
+      setLastDoc(response.lastDoc);
+      setHasMore(response.data.length === PAGE_SIZE);
+    } catch (error) {
+      console.error("Error loading sounds", error);
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  useEffect(() => {
+    loadRelaxSounds();
+  }, []);
+
+  const extractVideoId = (url: string) => {
+    const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+    const match = url?.match(regex);
+    return match ? match[1] : null; // Return video ID or null if not found
+  };
+
+
+  const renderItem = ({ item }: { item: any; }) => {
+    const isExpanded = expandedId === item.id;
+
+    const handlePress = () => {
+      if (expandedId === item.id) {
+        setExpandedId(null);  // Collapse the item if it's already expanded
+      } else {
+        setExpandedId(item.id);  // Expand the clicked item
+      }
+    };
+
+    const videoId = extractVideoId(item.link)
+
+    return (
+      <TouchableOpacity
+        key={item.id}
+        style={styles.card}
+        activeOpacity={1}
+
+      >
+        <View style={styles.cardContent}>
+          <Text style={styles.cardTitle}>{item.name}</Text>
+
+          <TouchableOpacity onPress={handlePress} style={styles.cardDescriptionRow}>
+            <Text style={styles.cardDescription} numberOfLines={isExpanded ? undefined : 3}>
+              {item.description}
+            </Text>
+          </TouchableOpacity>
+
+          <View style={styles.youtubeContainer}>
+            <YoutubePlayer
+              height={200}
+              play={false}
+              videoId={videoId as any}
+            />
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.heading}>Relax Sounds</Text>
-
-      {data.map((item) => {
-        const isExpanded = expandedId === item.id;
-
-        return (
-          <TouchableOpacity key={item.id} style={styles.card} activeOpacity={1}>
-            <View style={styles.cardContent}>
-              <Text style={styles.cardTitle}>{item.title}</Text>
-
-              <View style={styles.cardDescriptionRow}>
-                <Text style={styles.cardDescription} numberOfLines={isExpanded ? undefined : 3}>
-                  {item.description}
-                </Text>
-
-                <Pressable onPress={() => setExpandedId(isExpanded ? null : item.id)}>
-                  <Ionicons
-                    name={isExpanded ? "chevron-up-outline" : "chevron-down-outline"}
-                    size={20}
-                    color="#4f46e5"
-                  />
-                </Pressable>
-              </View>
-
-
-              <View style={styles.playerContainer}>
-                <TouchableOpacity
-                  style={styles.playButton}
-                  onPress={() => handlePlayPause(item.track)}
-                >
-                  <Ionicons
-                    name={isPlaying ? "pause" : "play"}
-                    size={24}
-                    color="white"
-                  />
-                </TouchableOpacity>
-                <Text style={styles.trackLabel}>Now Playing: Ocean Sound</Text>
-              </View>
-
-            </View>
-          </TouchableOpacity>
-        );
-      })}
-    </ScrollView>
+      <FlatList
+        data={relaxSounds}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        contentContainerStyle={{ padding: 10 }}
+        ListFooterComponent={
+          <>
+            {loading && (
+              <ActivityIndicator size="small" color="#6366F1" style={{ marginTop: 10 }} />
+            )}
+            {!loading && hasMore && (
+              <TouchableOpacity style={styles.loadMoreButton} onPress={() => loadRelaxSounds()}>
+                <Text style={styles.loadMoreText}>Load More</Text>
+              </TouchableOpacity>
+            )}
+            {!loading && relaxSounds.length === 0 && (
+              <Text style={styles.noResults}>No data found.</Text>
+            )}
+          </>
+        }
+      />
+    </View>
   );
 }
 
@@ -91,6 +127,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: 16,
     paddingVertical: 24,
+    marginTop: 20
   },
   heading: {
     fontSize: 24,
@@ -125,25 +162,24 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 8,
   },
-  playerContainer: {
-    marginTop: 12,
-    backgroundColor: "#4f46e5",
+  loadMoreButton: {
+    backgroundColor: "#4F46E5",
+    paddingVertical: 10,
     borderRadius: 8,
-    padding: 10,
-    flexDirection: "row",
+    marginTop: 10,
     alignItems: "center",
   },
-  playButton: {
-    width: 40,
-    height: 40,
-    backgroundColor: "#1f2937",
-    borderRadius: 20,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
+  loadMoreText: {
+    color: "#FFF",
   },
-  trackLabel: {
-    color: "white",
-    fontSize: 14,
+  noResults: {
+    textAlign: "center",
+    color: "#9CA3AF",
+    marginTop: 20,
   },
+  youtubeContainer: {
+    marginTop: 12,
+    borderRadius: 8,
+    overflow: "hidden",
+  }
 });

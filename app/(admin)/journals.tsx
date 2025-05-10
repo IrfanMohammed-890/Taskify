@@ -1,12 +1,59 @@
-import { useState } from 'react';
-import CreatePricingPlanForm from '@/components/form/CreatePricingPlans';
-import PricingPlansList from '@/components/PricingPlansList';
-import { SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, View, TouchableOpacity, Modal } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  SafeAreaView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Modal
+} from 'react-native';
+import { QueryDocumentSnapshot, DocumentData } from 'firebase/firestore';
 import JournalList from '@/components/JournalList';
 import UploadJournalForm from '@/components/form/UploadJournalForm';
+import { fetchJournalList } from '@/service/journal';
+
 
 export default function JournalScreen() {
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [journals, setJournals] = useState([]);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [editingJournal, setEditingJournal] = useState<any | null>(null);
+
+  const PAGE_SIZE = 10;
+
+  const loadJournals = async (reset = false) => {
+    try {
+      setLoading(true);
+      const response = await fetchJournalList(
+        PAGE_SIZE,
+        reset ? null : lastDoc,
+        searchText.trim()
+      );
+
+      if (reset) {
+        setJournals(response.data as any);
+      } else {
+        setJournals(prev => [...prev, ...response.data] as any);
+      }
+
+      setLastDoc(response.lastDoc);
+      setHasMore(response.data.length === PAGE_SIZE);
+    } catch (error) {
+      console.error("Error loading journals", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    setLastDoc(null);
+    setHasMore(true);
+    loadJournals(true);
+  }, [searchText]);
 
   const handleOpenModal = () => {
     setIsModalVisible(true);
@@ -14,30 +61,36 @@ export default function JournalScreen() {
 
   const handleCloseModal = () => {
     setIsModalVisible(false);
+    setEditingJournal(null);
   };
 
-  const handleUpdatePricingPlan = () => {
-    // Update logic here
-  };
+  useEffect(() => {
+    if (!isModalVisible) {
+      handleCloseModal();
+    }
+  }, [isModalVisible]);
 
   return (
-    <SafeAreaView style={{ flex: 1, marginTop: 40 }}>
+    <SafeAreaView style={{ flex: 1, marginTop: 40, padding: 10 }}>
       <StatusBar backgroundColor={'dark'} />
-      <ScrollView
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.title}>Manage Journal</Text>
+      <Text style={styles.title}>Manage  Journal</Text>
 
-        {/* Create new journal Button */}
-        <TouchableOpacity style={styles.button} onPress={handleOpenModal}>
-          <Text style={styles.buttonText} className=''>Create new Journal</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={handleOpenModal}>
+        <Text style={styles.buttonText}>Create Journal</Text>
+      </TouchableOpacity>
 
-        <JournalList />
-      </ScrollView>
-
-      {/* Modal */}
+      <JournalList
+        journals={journals}
+        setSearchText={setSearchText}
+        searchText={searchText}
+        loadJournals={loadJournals}
+        loading={loading}
+        hasMore={hasMore}
+        onEdit={(sound: any) => {
+          setEditingJournal(sound);
+          setIsModalVisible(true);
+        }}
+      />
       <Modal
         visible={isModalVisible}
         animationType="slide"
@@ -46,17 +99,20 @@ export default function JournalScreen() {
       >
         <View style={styles.modalBackground}>
           <View style={styles.modalContainer}>
-            <UploadJournalForm />
+            <UploadJournalForm
+              setIsModalVisible={setIsModalVisible}
+              reloadJournal={() => loadJournals(true)}
+              editingJournal={editingJournal}
+            />
             <TouchableOpacity style={styles.closeButton} onPress={handleCloseModal}>
-              <Text style={styles.closeButtonText}>Close</Text>
+              <Text style={styles.closeButtonText}>x</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-
     </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
   contentContainer: {
@@ -83,22 +139,27 @@ const styles = StyleSheet.create({
   },
   modalBackground: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)', // semi-transparent background
+    backgroundColor: 'rgba(0,0,0,0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 20,
+    padding: 10,
     width: '90%',
   },
   closeButton: {
-    marginTop: 16,
+    position: 'absolute',
+    top: -10,
+    right: -10,
+    width: 30,
+    height: 30,
+    borderRadius: 20,
     backgroundColor: '#EF4444',
-    paddingVertical: 10,
-    borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
   },
   closeButtonText: {
     color: '#FFFFFF',

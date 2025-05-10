@@ -1,18 +1,44 @@
-import React from 'react';
-import { StyleSheet, View, Dimensions } from 'react-native';
+import { getJournalById } from '@/service/journal';
+import { useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, View, Dimensions, ActivityIndicator, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
 
 export default function SingleJournal() {
-  const pdfUrl = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
+  const [journalData, setJournalData] = useState<any>(null);
+  const { id } = useLocalSearchParams();
+  const [loading, setLoading] = useState(false);
+
+  const getJournal = async (id: string) => {
+    setLoading(true);
+    const data = await getJournalById(id);
+    setJournalData(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (id) {
+      getJournal(id as string);
+    }
+  }, [id]);
+
+  if (loading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" color="#4f46e5" />
+        <Text className="mt-4 text-gray-500">Loading journal...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      <WebView
-        source={{ uri: `https://docs.google.com/gview?embedded=true&url=${pdfUrl}` }}
+      {journalData && <WebView
+        source={{ uri: `https://docs.google.com/gview?embedded=true&url=${journalData?.link}` }}
         style={styles.pdf}
         originWhitelist={['*']}
         startInLoadingState
-      />
+      />}
     </View>
   );
 }

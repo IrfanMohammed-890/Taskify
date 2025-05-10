@@ -55,13 +55,16 @@ export default function BreathingScreen() {
     setEditingBreathing(null);
   };
 
+  useEffect(() => {
+    if (!isModalVisible) {
+      handleCloseModal();
+    }
+  }, [isModalVisible])
+
   return (
-    <SafeAreaView style={{ flex: 1, marginTop: 40 }}>
+    <SafeAreaView style={{ flex: 1, marginTop: 40, padding: 10 }}>
       <StatusBar backgroundColor={'dark'} />
-      <ScrollView
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
+
         <Text style={styles.title}>Manage Breathing</Text>
 
         {/* Create Pricing Plan Button */}
@@ -80,8 +83,7 @@ export default function BreathingScreen() {
             setEditingBreathing(breathing);
             setIsModalVisible(true);
           }}
-        />
-      </ScrollView>
+      />
 
       {/* Modal */}
       <Modal
