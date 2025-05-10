@@ -119,6 +119,35 @@ export const createUser = async (userInfo: any) => {
       email: userInfo.email,
       contactNumber: userInfo.contactNumber,
       createdAt: new Date(),
+      isAdmin: false,
+      isMember: false,
+    });
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+};
+
+export const updateUser = async (uid: string, updatedInfo: Partial<{
+  firstName: string;
+  lastName: string;
+  contactNumber: string;
+}>) => {
+  try {
+    const userRef = doc(db, 'users', uid);
+    await updateDoc(userRef, {
+      ...updatedInfo,
+      updatedAt: new Date(),
+    });
+  } catch (error: any) {
+    throw new Error(error.message);
+  }
+};
+
+export const updateUserPaymentStatus = async (id: string, isMember: boolean) => {
+  try {
+    const userRef = doc(db, 'users', id);
+    await updateDoc(userRef, {
+      isMember: isMember,
     });
   } catch (error: any) {
     throw new Error(error.message);

@@ -13,6 +13,7 @@ import {
   deleteDoc,
   setDoc,
   updateDoc,
+  getDoc,
 } from "firebase/firestore";
 
 /**
@@ -111,6 +112,23 @@ export const deleteBreathing = async (id: string) => {
     const docRef = doc(db, 'breathings', id);
     await deleteDoc(docRef);
   } catch (error) {
+    throw error;
+  }
+};
+
+
+export const getBreathingById = async (id: string) => {
+  try {
+    const docRef = doc(db, 'breathings', id);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() };
+    } else {
+      throw new Error('Breathing not found');
+    }
+  } catch (error) {
+    console.error('Error fetching breathing:', error);
     throw error;
   }
 };

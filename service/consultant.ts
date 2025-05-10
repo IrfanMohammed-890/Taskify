@@ -22,26 +22,26 @@ import {
  * @param {string} searchTerm - Optional location_name search term
  */
 
-interface MediationData {
+interface ConsultantData {
 
 }
 
-export const fetchMeditationList = async (
+export const fetchConsultantList = async (
   pageSize = 10,
   lastDoc: QueryDocumentSnapshot<DocumentData> | null = null,
   searchTerm: string = ""
 ) => {
   try {
-    const collectionRef = collection(db, "meditations");
+    const collectionRef = collection(db, "consultant");
     let q;
 
     if (searchTerm) {
       // Firestore doesn't support partial string matching, so only exact matches or filtering via indexing
       q = query(
         collectionRef,
-        where("meditationName", ">=", searchTerm),
-        where("meditationName", "<=", searchTerm + "\uf8ff"),
-        orderBy("meditationName"),
+        where("name", ">=", searchTerm),
+        where("name", "<=", searchTerm + "\uf8ff"),
+        orderBy("name"),
         limit(pageSize)
       );
     } else {
@@ -57,7 +57,7 @@ export const fetchMeditationList = async (
     }
 
     const snapshot = await getDocs(q);
-    const meditations = snapshot.docs.map(doc => ({
+    const consultants = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
     }));
@@ -65,71 +65,71 @@ export const fetchMeditationList = async (
     const newLastDoc = snapshot.docs[snapshot.docs.length - 1] || null;
 
     return {
-      data: meditations,
+      data: consultants,
       lastDoc: newLastDoc, // Store this to fetch next page
     };
   } catch (error) {
-    console.error("Error fetching meditation locations:", error);
+    console.error("Error fetching consultants locations:", error);
     throw error;
   }
 };
 
-export const createMeditation = async (data: any) => {
+export const createConsultant = async (data: any) => {
   try {
-    await setDoc(doc(db, 'meditations', Date.now().toString()), {
-      meditationName: data.meditationName,
-      description: data.description,
-      steps: data.steps.map((s: any) => s.step),
-      isPaid: data.isPaid || false,
-      locationId: data.locationId || '',
+    await setDoc(doc(db, 'consultant', Date.now().toString()), {
+      name: data.name,
+      education: data.education,
+      contact: data.contact,
+      email: data.email,
+      days: data.days.map((d: any) => d.day), // Store selected days as string array
       createdAt: new Date(),
     });
   } catch (error: any) {
     console.error('Firestore Error:', error.message);
-    throw new Error(error.message || 'Failed to create meditation');
+    throw new Error(error.message || 'Failed to create consultant');
   }
 };
 
 
-export const updateMeditation = async (id: string, data: any) => {
+
+export const updateConsultant = async (id: string, data: any) => {
   try {
-    const docRef = doc(db, 'meditations', id);
+    const docRef = doc(db, 'consultant', id);
     await updateDoc(docRef, {
-      meditationName: data.meditationName,
-      description: data.description,
-      steps: data.steps.map((s: any) => s.step),
-      isPaid: data.isPaid || false,
-      locationId: data.locationId || '',
+      name: data.name,
+      education: data.education,
+      contact: data.contact,
+      email: data.email,
+      days: data.days.map((d: any) => d.day),
       updatedAt: new Date(),
     });
   } catch (error: any) {
     console.error('Firestore Error:', error.message);
-    throw new Error(error.message || 'Failed to update meditation');
+    throw new Error(error.message || 'Failed to update consultant');
   }
 };
 
-
-export const deleteMeditation = async (id: string) => {
+export const deleteConsultant = async (id: string) => {
   try {
-    const docRef = doc(db, 'meditations', id);
+    const docRef = doc(db, 'consultant', id);
     await deleteDoc(docRef);
   } catch (error) {
     throw error;
   }
 };
 
-export const getMeditationById = async (id: string) => {
+export const getConsultantById = async (id: string) => {
   try {
-    const docRef = doc(db, 'meditations', id);
+    const docRef = doc(db, 'consultant', id);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() };
     } else {
-      throw new Error('Meditation not found');
+      throw new Error('Consultant not found');
     }
   } catch (error) {
-    console.error('Error fetching meditation:', error);
+    console.error('Error fetching consultant:', error);
     throw error;
   }
 };

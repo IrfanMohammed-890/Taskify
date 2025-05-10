@@ -1,7 +1,7 @@
 // authService.ts
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth, db } from "../firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 
 // Sign Up
 export const signUp = async (email: string, password: string) => {
@@ -24,7 +24,23 @@ export const login = async (email: string, password: string) => {
   }
 };
 
+//check email exist or not and user type
+export const checkUser = async (email: string) => {
+  try {
+    const usersRef = collection(db, 'users'); // Use your collection name here
+    const q = query(usersRef, where('email', '==', email));
+    const querySnapshot = await getDocs(q);
 
+    if (!querySnapshot.empty) {
+      const userData = querySnapshot.docs[0].data(); // Get the first matching user
+      return userData;
+    } else {
+      return null;
+    }
+  } catch (error: any) {
+    throw error;
+  }
+};
 export const getUserDataFromFirestore = async (uid: string) => {
   const docRef = doc(db, 'users', uid);
   const docSnap = await getDoc(docRef);

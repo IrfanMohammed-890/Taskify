@@ -123,6 +123,8 @@ export const getMeditationLocationNamesList = async () => {
     const locations = querySnapshot.docs.map(doc => ({
       id: doc.id,
       title: doc.data().location_name,
+      latitude: doc.data().lat,
+      longitude: doc.data().long
     }));
     return locations;
   } catch (error: any) {

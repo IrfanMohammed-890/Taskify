@@ -13,6 +13,7 @@ import {
   deleteDoc,
   setDoc,
   updateDoc,
+  getDoc,
 } from "firebase/firestore";
 
 /**
@@ -113,6 +114,22 @@ export const deletePricingPlans = async (id: string) => {
     const docRef = doc(db, 'pricing_plans', id);
     await deleteDoc(docRef);
   } catch (error) {
+    throw error;
+  }
+};
+
+export const getPricingPlansById = async (id: string) => {
+  try {
+    const docRef = doc(db, 'pricing_plans', id);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return { id: docSnap.id, ...docSnap.data() };
+    } else {
+      throw new Error('Pricing plans not found');
+    }
+  } catch (error) {
+    console.error('Error fetching pricing plans:', error);
     throw error;
   }
 };
