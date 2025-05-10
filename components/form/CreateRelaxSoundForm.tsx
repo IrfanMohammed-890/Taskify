@@ -1,31 +1,94 @@
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Switch, StyleSheet } from 'react-native';
-import { useForm, Controller, useFieldArray } from 'react-hook-form';
-import { PlusCircle, Trash2 } from 'lucide-react-native'; // You can use any icons you like
+import { useForm, Controller } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import Toast from 'react-native-toast-message';
+import { createRelaxSound, updateRelaxSound } from '@/service/relax-sound';
 
-export default function CreateRelaxSoundForm() {
-  const { control, handleSubmit } = useForm({
+
+type FormData = {
+  name: string;
+  description: string;
+  isPaid?: boolean;
+  link: string;
+};
+
+
+export default function CreateRelaxSoundForm({
+  setIsModalVisible,
+  reloadRelaxSounds,
+  editingRelaxSound,
+}: {
+  setIsModalVisible: (visible: boolean) => void;
+  reloadRelaxSounds: () => void;
+  editingRelaxSound: any | null;
+}) {
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isValid },
+  } = useForm<FormData>({
+    mode: 'onChange',
     defaultValues: {
-      soundName: '',
+      name: '',
       description: '',
-      file: '',
       isPaid: false,
+      link: ''
     },
   });
 
+  const [isLoading, setIsLoading] = useState(false);
 
-  const onSubmit = (data: any) => {
-    console.log('Sound Data:', data);
+  const onSubmit = async (data: any) => {
+    try {
+      setIsLoading(true);
+
+      editingRelaxSound ? await updateRelaxSound(editingRelaxSound.id, data) : await createRelaxSound(data);
+      setIsModalVisible(false);
+      reset();
+      Toast.show({
+        type: 'success',
+        text1: editingRelaxSound ? 'Relax sound updated' : 'Relax sound saved',
+      });
+      reloadRelaxSounds();
+    } catch (error: any) {
+      console.error("Error:", error.message);
+      Toast.show({
+        type: 'error',
+        text1: 'Error Saving Relax sound',
+        text2: error.message || 'Please try again.',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  useEffect(() => {
+    if (editingRelaxSound) {
+      reset({
+        name: editingRelaxSound.name || '',
+        description: editingRelaxSound.description || '',
+        isPaid: editingRelaxSound.isPaid ?? false,
+        link: editingRelaxSound.link || ''
+      });
+    }
+  }, [editingRelaxSound, reset]);
+
+
+
+
   return (
-    <ScrollView>
+    <ScrollView contentContainerStyle={{ padding: 16 }}>
+      {/* Meditation Name */}
       <Text style={styles.label}>Sound Name</Text>
       <Controller
         control={control}
-        name="soundName"
+        name="name"
+        rules={{ required: 'Sound name is required' }}
         render={({ field: { onChange, value } }) => (
           <TextInput
             style={styles.input}
+            className={`w-full border ${errors.name ? 'border-red-500' : 'border-gray-300'} p-3 pr-12 rounded-xl bg-gray-50 text-gray-800`}
             placeholder="Enter sound name"
             value={value}
             onChangeText={onChange}
@@ -38,10 +101,12 @@ export default function CreateRelaxSoundForm() {
       <Controller
         control={control}
         name="description"
+        rules={{ required: 'Description is required' }}
         render={({ field: { onChange, value } }) => (
           <TextInput
             style={[styles.input, styles.textArea]}
-            placeholder="Enter meditation description"
+            className={`w-full border ${errors.description ? 'border-red-500' : 'border-gray-300'} p-3 pr-12 rounded-xl bg-gray-50 text-gray-800`}
+            placeholder="Enter sound description"
             value={value}
             onChangeText={onChange}
             multiline
@@ -50,6 +115,21 @@ export default function CreateRelaxSoundForm() {
       />
 
 
+      <Text style={styles.label}>Youtube Link</Text>
+      <Controller
+        control={control}
+        name="link"
+        rules={{ required: 'Link is required' }}
+        render={({ field: { onChange, value } }) => (
+          <TextInput
+            style={styles.input}
+            className={`w-full border ${errors.link ? 'border-red-500' : 'border-gray-300'} p-3 pr-12 rounded-xl bg-gray-50 text-gray-800`}
+            placeholder="Enter youtube link"
+            value={value}
+            onChangeText={onChange}
+          />
+        )}
+      />
 
       {/* Paid Option */}
       <View style={styles.paidContainer}>
@@ -71,10 +151,14 @@ export default function CreateRelaxSoundForm() {
       {/* Submit Button */}
       <TouchableOpacity
         onPress={handleSubmit(onSubmit)}
-        style={styles.submitButton}
+        style={[styles.submitButton, (!isValid || isLoading) && { opacity: 0.5 }]}
+        disabled={!isValid || isLoading}
       >
-        <Text style={styles.submitText}>Save Meditation</Text>
+        <Text style={styles.submitText}>
+          {isLoading ? 'Submitting...' : editingRelaxSound ? 'Update sound' : 'Save sound'}
+        </Text>
       </TouchableOpacity>
+
     </ScrollView>
   );
 }

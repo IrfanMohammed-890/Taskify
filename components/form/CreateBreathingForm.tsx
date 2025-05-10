@@ -170,7 +170,7 @@ export default function CreateBreathingForm({
         disabled={!isValid || isLoading}
       >
         <Text style={styles.submitText}>
-          {isLoading ? 'Submitting...' : editingBreathing ? 'Update Meditation' : 'Save Meditation'}
+          {isLoading ? 'Submitting...' : editingBreathing ? 'Update breathing' : 'Save breathing'}
         </Text>
       </TouchableOpacity>
     </ScrollView>

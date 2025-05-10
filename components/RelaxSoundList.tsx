@@ -1,143 +1,209 @@
-import React, { useState, useMemo } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
-import { Trash2 } from 'lucide-react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, TextInput, FlatList, ActivityIndicator } from 'react-native';
+import { Trash2, Pencil } from 'lucide-react-native';
+import { useState } from 'react';
+import Toast from 'react-native-toast-message';
+import ConfirmDialog from './ui/ConfirmDialog';
+import { deleteRelaxSound } from '@/service/relax-sound';
 
-export default function RelaxSoundList() {
-  const sound = [
-    { id: 1, name: 'Relaxing body', isPaid: true, description: 'this is ' },
-  ];
+interface RelaxSoundListProps {
+  relaxSounds: any[];
+  setSearchText: React.Dispatch<React.SetStateAction<string>>;
+  searchText: string;
+  loadRelaxSounds: (reset?: boolean) => void;
+  loading: boolean;
+  hasMore: boolean;
+  onEdit: (data: any) => void;
+}
 
-  const [searchText, setSearchText] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  // const USERS_PER_PAGE = 4;
+const RelaxSoundList: React.FC<RelaxSoundListProps> = ({
+  relaxSounds,
+  setSearchText,
+  searchText,
+  loadRelaxSounds,
+  loading,
+  hasMore,
+  onEdit,
+}) => {
 
-  // Filtered users based on search
-  const filteredSound = useMemo(() => {
-    return sound.filter(data =>
-      data.name.toLowerCase().includes(searchText.toLowerCase())
-    );
-  }, [searchText]);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  // Pagination logic
-  // const totalPages = Math.ceil(filteredSound.length / USERS_PER_PAGE);
-  const paginatedSound = useMemo(() => {
-    // const start = (currentPage - 1) * USERS_PER_PAGE;
-    // return filteredSound.slice(start, start + USERS_PER_PAGE);
-    return filteredSound;
-  }, [filteredSound, currentPage]);
+  const handleDelete = async () => {
+    if (!selectedId) return;
+    setShowConfirm(false);
+    try {
+      await deleteRelaxSound(selectedId);
+      Toast.show({
+        type: "success",
+        text1: "Deleted",
+        text2: "Relax sound deleted successfully!",
+      });
+      loadRelaxSounds(true);
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to delete relax sound.",
+      });
+    } finally {
+      setShowConfirm(false);
+      setSelectedId(null);
+    }
+  };
+
+
+  const renderItem = ({ item }: { item: any; }) => (
+    <View key={item.id} style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.title} textBreakStrategy="balanced" ellipsizeMode="tail">{item.name}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <TouchableOpacity onPress={() => onEdit(item)} style={{ marginRight: 8 }}>
+            <Pencil size={20} color="#3B82F6" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => {
+              setSelectedId(item.id);
+              setShowConfirm(true);
+            }}
+          >
+            <Trash2 size={20} color="#EF4444" />
+          </TouchableOpacity>
+
+        </View>
+      </View>
+
+      <Text style={styles.description} numberOfLines={6} ellipsizeMode="tail">{item.description}</Text>
+      <Text style={styles.description}>Link: {item.link}</Text>
+
+    </View>
+  );
 
   return (
     <View style={styles.container}>
+
       <TextInput
         style={styles.searchBar}
-        placeholder="Search by name or email"
+        placeholder="Search by meditation name"
         value={searchText}
-        onChangeText={(text) => {
-          setSearchText(text);
-          setCurrentPage(1); // reset to first page when searching
-        }}
+        onChangeText={setSearchText}
       />
-      <ScrollView contentContainerStyle={{ padding: 5 }}>
-        {paginatedSound?.map((sound) => (
-          <View key={sound.id} style={styles.card}>
-            <View style={styles.cardHeader}>
-              <Text style={styles.name}>{sound.name}</Text>
-              <TouchableOpacity onPress={() => console.log('Delete sound', sound.id)}>
-                <Trash2 size={20} color="#EF4444" />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.detail}>Description: {sound.description}</Text>
-          </View>
-        ))}
-        {paginatedSound?.length === 0 && (
-          <Text style={styles.noResults}>No data found.</Text>
-        )}
-      </ScrollView>
 
-      {/* Pagination Controls */}
-      {/* <View style={styles.pagination}>
-        <TouchableOpacity
-          onPress={() => setCurrentPage(p => Math.max(p - 1, 1))}
-          disabled={currentPage === 1}
-          style={[styles.pageButton, currentPage === 1 && styles.disabled]}
-        >
-          <Text>Previous</Text>
-        </TouchableOpacity>
-        <Text style={styles.pageNumber}>Page {currentPage} of {totalPages}</Text>
-        <TouchableOpacity
-          onPress={() => setCurrentPage(p => Math.min(p + 1, totalPages))}
-          disabled={currentPage === totalPages}
-          style={[styles.pageButton, currentPage === totalPages && styles.disabled]}
-        >
-          <Text>Next</Text>
-        </TouchableOpacity>
-      </View> */}
+      <FlatList
+        data={relaxSounds}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.id.toString()}
+        ListFooterComponent={
+          <>
+            {loading && (
+              <ActivityIndicator
+                size="small"
+                color="#6366F1"
+                style={{ marginTop: 10 }}
+              />
+            )}
+            {!loading && hasMore && (
+              <TouchableOpacity
+                style={styles.loadMoreButton}
+                onPress={() => loadRelaxSounds()}
+              >
+                <Text style={styles.loadMoreText}>Load More</Text>
+              </TouchableOpacity>
+            )}
+            {!loading && relaxSounds.length === 0 && (
+              <Text style={styles.noResults}>No data found.</Text>
+            )}
+          </>
+        }
+        contentContainerStyle={{ padding: 10 }}
+      />
+
+      <ConfirmDialog
+        visible={showConfirm}
+        message="Do you really want to delete this sound?"
+        onCancel={() => setShowConfirm(false)}
+        onConfirm={handleDelete}
+        loading={loading}
+      />
+
     </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
   },
   searchBar: {
     height: 40,
-    borderColor: '#E5E7EB',
+    borderColor: "#E5E7EB",
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 10,
-    marginBottom: 10,
-    backgroundColor: '#F9FAFB',
+    margin: 10,
+    backgroundColor: "#F9FAFB",
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
     shadowRadius: 4,
     elevation: 2,
   },
   cardHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-between', // changed from space-around
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 12,
   },
-  name: {
+
+  title: {
+    flex: 1, // allows it to take remaining space
     fontSize: 18,
     fontWeight: '600',
     color: '#1F2937',
   },
-  detail: {
+
+  description: {
     fontSize: 14,
     color: '#4B5563',
-    marginTop: 2,
+    marginBottom: 8,
   },
-  noResults: {
+  stepsContainer: {
+    marginTop: 8,
+  },
+  stepItem: {
+    fontSize: 14,
+    color: '#374151',
+    marginBottom: 4,
+  },
+  loading: {
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  noData: {
     textAlign: 'center',
     color: '#9CA3AF',
+    marginVertical: 20,
+  },
+  noResults: {
+    textAlign: "center",
+    color: "#9CA3AF",
     marginTop: 20,
   },
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  loadMoreButton: {
+    backgroundColor: "#4F46E5",
     paddingVertical: 10,
-  },
-  pageButton: {
-    padding: 10,
-    backgroundColor: '#E5E7EB',
     borderRadius: 8,
+    marginTop: 10,
+    alignItems: "center",
   },
-  pageNumber: {
-    fontSize: 16,
-    color: '#374151',
-  },
-  disabled: {
-    opacity: 0.4,
+  loadMoreText: {
+    color: "#FFF",
   },
 });
+
+export default RelaxSoundList;
