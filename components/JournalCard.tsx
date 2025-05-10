@@ -1,23 +1,36 @@
 import { Text, View, StyleSheet, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
+import { useUserAuth } from "@/context/UserAuthContext";
+import Toast from "react-native-toast-message";
 
 export default function JournalCard({
   title,
   description,
   id,
+  isPaid
 }: {
   title: string;
   description: string;
-    id: string | number; // Expecting an ID for each journal entry
+    id: string | number;
+    isPaid: boolean;
+    // Expecting an ID for each journal entry
 }) {
   const router = useRouter();
   const maxLength = 160;
   const shouldTruncate = description.length > maxLength;
   const shortText = shouldTruncate ? description.slice(0, maxLength).trim() : description;
-
+  const { user } = useUserAuth()
   const handlePress = () => {
-    // Navigate to the journal details page
-    router.push(`/journal/${1}` as any);
+    if (!user?.isMember && isPaid) {
+      router.push('/(user)/pricing');
+      return Toast.show({
+        type: 'error',
+        text1: 'Need subscription',
+        text2: 'Subscription is required for premium.',
+      });
+    } else {
+      router.push(`/journal/${id}` as any);
+    }
   };
 
   return (
