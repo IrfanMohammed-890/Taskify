@@ -8,8 +8,10 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import { useUserAuth } from "@/context/UserAuthContext";
 
 export default function ProfileScreen() {
+  const { logout, user } = useUserAuth()
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
@@ -17,7 +19,9 @@ export default function ProfileScreen() {
         <Text style={styles.title}>My Profile</Text>
         <TouchableOpacity
           className="flex items-center"
-          onPress={() => router.push('/login' as any)}
+          onPress={() => {
+            logout();
+          }}
           style={styles.logoutButton}>
           <Ionicons name="log-out" size={20} color="#4f46e5" />
           <Text style={styles.logoutText}>Logout</Text>
@@ -29,22 +33,22 @@ export default function ProfileScreen() {
         <View style={styles.profileHeader}>
           <Ionicons name="person-circle-outline" size={70} color="#4f46e5" />
           <View>
-            <Text style={styles.profileName}>Krishna A.</Text>
-            <Text style={styles.profileEmail}>krishna@example.com</Text>
+            <Text style={styles.profileName}>{user?.firstName} {user?.lastName}</Text>
+            <Text style={styles.profileEmail}>{user?.email}</Text>
           </View>
         </View>
 
         {/* Info Rows */}
         <View style={styles.infoSection}>
-          <InfoRow label="Full Name" value="Krishna Aryal" />
-          <InfoRow label="Email" value="krishna@example.com" />
-          <InfoRow label="Contact" value="+977-9800000000" />
+          <InfoRow label="Full Name" value={`${user?.firstName} ${user?.lastName}`} />
+          <InfoRow label="Email" value={`${user?.email}`} />
+          <InfoRow label="Contact" value={`${user?.contactNumber}`} />
           <InfoRow
             label="Subscription"
-            value="Active"
+            value={user?.isMember ? 'Active' : 'Inactive'}
             badge
-            badgeColor="#d1fae5"
-            badgeTextColor="#065f46"
+            badgeColor={user?.isMember ? '#d1fae5' : '#fee2e2'} // green for active, red for inactive
+            badgeTextColor={user?.isMember ? '#065f46' : '#991b1b'} // dark green vs dark red
           />
         </View>
       </View>
@@ -57,10 +61,7 @@ export default function ProfileScreen() {
       >
         <Text style={styles.changePasswordText}>Edit Profile</Text>
       </TouchableOpacity>
-      {/* SOS Button */}
-      <TouchableOpacity style={styles.sosButton}>
-        <Text style={styles.sosText}>Update SOS Details</Text>
-      </TouchableOpacity>
+
 
       <TouchableOpacity
         style={styles.passwordButton}

@@ -7,14 +7,20 @@ import {
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useUserAuth } from "@/context/UserAuthContext";
 
 export default function AdminProfileScreen() {
+  const { user, logout } = useUserAuth()
   return (
     <ScrollView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>My Profile</Text>
-        <TouchableOpacity style={styles.editButton}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={() => router.push('update-profile' as any)}
+        >
           <Ionicons name="create-outline" size={20} color="#4f46e5" />
           <Text style={styles.editText}>Edit</Text>
         </TouchableOpacity>
@@ -25,27 +31,31 @@ export default function AdminProfileScreen() {
         <View style={styles.profileHeader}>
           <Ionicons name="person-circle-outline" size={70} color="#4f46e5" />
           <View>
-            <Text style={styles.profileName}>Krishna A.</Text>
-            <Text style={styles.profileEmail}>krishna@example.com</Text>
+            <Text style={styles.profileName}>{user?.firstName || 'Admin'} {user?.lastName || ''}</Text>
+            <Text style={styles.profileEmail}>{user?.email}</Text>
           </View>
         </View>
 
         <View style={styles.infoSection}>
-          <InfoRow label="Full Name" value="Krishna Aryal" />
-          <InfoRow label="Email" value="krishna@example.com" />
-          <InfoRow label="Contact" value="+977-9800000000" />
-          <InfoRow
-            label="Subscription"
-            value="Active"
-            badge
-            badgeColor="#d1fae5"
-            badgeTextColor="#065f46"
-          />
+          <InfoRow label="Full Name" value={`${user?.firstName || 'Admin'} ${user?.lastName || ''}`} />
+          <InfoRow label="Email" value={`${user?.email}`} />
+          <InfoRow label="Contact" value={`${user?.contactNumber || ""}`} />
         </View>
       </View>
 
-      <TouchableOpacity style={styles.sosButton}>
+      <TouchableOpacity
+        style={styles.sosButton}
+        onPress={() => router.push('change-password' as any)}
+      >
         <Text style={styles.changePassword}>Change password</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.logout}
+        className="bg-red-500"
+        onPress={() => logout()}
+      >
+        <Text className="text-white">Logout</Text>
       </TouchableOpacity>
     </ScrollView>
   );
@@ -185,5 +195,13 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 16,
     fontWeight: "600",
+  },
+  logout: {
+    backgroundColor: "red",
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: "center",
+    marginTop: 24,
+    elevation: 2,
   },
 });

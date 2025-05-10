@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -10,34 +10,61 @@ import {
   Alert,
 } from 'react-native';
 import { useForm, Controller } from 'react-hook-form';
+import { useUserAuth } from '@/context/UserAuthContext';
+import { updateUser } from '@/service/user';
+import Toast from 'react-native-toast-message';
+import { getUserDataFromFirestore } from '@/service/authService';
 
 type FormData = {
   firstName: string;
   lastName: string;
-  phoneNumber: string;
+  contactNumber: string;
 };
 
 const UpdateProfileScreen = () => {
+
+  const { user, loginData, setUser } = useUserAuth()
   const navigation = useNavigation();
+  const { control, handleSubmit, formState: { errors }, reset } = useForm<FormData>();
 
-  const {
-    control,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormData>({
-    defaultValues: {
-      firstName: 'John',
-      lastName: 'Doe',
-      phoneNumber: '1234567890',
-    },
-  });
 
-  const email = 'john@example.com'; // read-only field
 
-  const onSubmit = (data: FormData) => {
-    console.log('Updated profile:', { ...data, email });
-    Alert.alert('Success', 'Profile updated successfully!');
+  const onSubmit = async (formData: FormData) => {
+    try {
+      if (!loginData?.uid) throw new Error('User ID missing');
+
+      await updateUser(loginData.uid, {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        contactNumber: formData.contactNumber,
+      });
+      const userData = await getUserDataFromFirestore(loginData.uid);
+      setUser(userData);
+      navigation.goBack();
+      Toast.show({
+        type: 'success',
+        text2: `Profile updated successfully!`,
+      });
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error updating profile',
+        text2: 'Something went wrong.',
+      });
+    }
   };
+
+
+  useEffect(() => {
+    if (user) {
+      reset({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        contactNumber: user.contactNumber || '',
+      });
+    }
+  }, [user, reset]);
+
 
   return (
     <View style={styles.container}>
@@ -89,14 +116,15 @@ const UpdateProfileScreen = () => {
 
       <TextInput
         style={[styles.input, { backgroundColor: '#e5e7eb' }]}
-        value={email}
+        value={user?.email}
         editable={false}
+        readOnly
         placeholder="Email"
       />
 
       <Controller
         control={control}
-        name="phoneNumber"
+        name="contactNumber"
         rules={{
           required: 'Phone number is required',
           pattern: {
@@ -113,8 +141,8 @@ const UpdateProfileScreen = () => {
               placeholder="Phone Number"
               keyboardType="phone-pad"
             />
-            {errors.phoneNumber && (
-              <Text style={styles.errorText}>{errors.phoneNumber.message}</Text>
+            {errors.contactNumber && (
+              <Text style={styles.errorText}>{errors.contactNumber.message}</Text>
             )}
           </>
         )}
