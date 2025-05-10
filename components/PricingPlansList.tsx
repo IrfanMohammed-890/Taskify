@@ -51,7 +51,7 @@ export default function PricingPlansList({
   const renderItem = ({ item }: { item: any; }) => (
     <View key={item.id} style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.planName}>{item.planName}</Text>
+        <Text style={styles.planName} textBreakStrategy="balanced">{item.planName}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity onPress={() => onEdit(item)} style={{ marginRight: 8 }}>
             <Pencil size={20} color="#3B82F6" />

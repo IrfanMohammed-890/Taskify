@@ -55,13 +55,16 @@ export default function PricingPlansScreen() {
     setEditingPricingPlans(null);
   };
 
+  useEffect(() => {
+    if (!isModalVisible) {
+      handleCloseModal();
+    }
+  }, [isModalVisible])
+
   return (
-    <SafeAreaView style={{ flex: 1, marginTop: 40 }}>
+    <SafeAreaView style={{ flex: 1, marginTop: 40, padding: 10 }}>
       <StatusBar backgroundColor={'dark'} />
-      <ScrollView
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
+
         <Text style={styles.title}>Manage pricing plans</Text>
 
         {/* Create Pricing Plan Button */}
@@ -81,7 +84,7 @@ export default function PricingPlansScreen() {
             setIsModalVisible(true);
           }}
         />
-      </ScrollView>
+
 
       {/* Modal */}
       <Modal

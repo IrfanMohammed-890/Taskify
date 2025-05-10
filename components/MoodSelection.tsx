@@ -1,11 +1,16 @@
 import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useState } from 'react';
 import { Entypo, FontAwesome5 } from '@expo/vector-icons';
+import { createMood } from '@/service/mood';
+import { useUserAuth } from '@/context/UserAuthContext';
+import Toast from 'react-native-toast-message';
 
-export default function MoodSelection() {
-  const [selectedMood, setSelectedMood] = useState<string | null>(null);
+export default function MoodSelection({ checkIsMoodSelected }: {
+  checkIsMoodSelected: () => void;
+}) {
 
-  // Define mood icons and labels
+  const { loginData } = useUserAuth();
+
   const moodIcons = [
     { id: 'happy', icon: <Entypo name="emoji-happy" size={50} color="green" />, label: 'Happy' },
     { id: 'sad', icon: <Entypo name="emoji-sad" size={50} color="indigo" />, label: 'Sad' },
@@ -13,10 +18,21 @@ export default function MoodSelection() {
     { id: 'neutral', icon: <Entypo name="emoji-neutral" size={50} color="blue" />, label: 'Neutral' },
   ];
 
-  // Handle mood selection
-  const handleMoodSelect = (mood: string) => {
-    setSelectedMood(mood);
-    Alert.alert(`Mood selected: ${mood}`);
+  const handleMoodSelect = async (mood: string) => {
+    try {
+      await createMood({ userId: loginData.uid, mood });
+      checkIsMoodSelected();
+      Toast.show({
+        type: 'success',
+        text2: `You're ${mood} today.`,
+      });
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Login mood selection',
+        text2: 'Something went wrong.',
+      });
+    }
   };
 
   return (
