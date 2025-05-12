@@ -17,10 +17,9 @@ import { checkUser, login } from '@/service/authService';
 import Toast from 'react-native-toast-message';
 import { FirebaseError } from 'firebase/app';
 import { useUserAuth } from '@/context/UserAuthContext';
-import { LogOut } from 'lucide-react-native';
 
 export default function LoginScreen() {
-  const { user, setIsLoggedIn } = useUserAuth();
+  const { user} = useUserAuth();
   const router = useRouter();
   const { control, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
@@ -52,7 +51,6 @@ export default function LoginScreen() {
               text2: `Welcome back!`,
             });
             setIsLoading(false);
-            setIsLoggedIn(true);
             router.replace('/(user)');
           }
         } else {
