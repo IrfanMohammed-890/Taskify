@@ -13,15 +13,38 @@ import { StatusBar } from 'expo-status-bar';
 import { Controller, useForm } from 'react-hook-form';
 import { Ionicons } from '@expo/vector-icons';
 import Logo from '@/components/Logo';
+import { checkUser, login } from '@/service/authService';
+import Toast from 'react-native-toast-message';
 
 export default function AdminLoginScreen() {
   const router = useRouter();
   const { control, handleSubmit, formState: { errors } } = useForm();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const onSubmit = async (data: any) => {
+    setIsLoading(true);
+    const userData = await checkUser(data.email);
+    if (userData) {
+      if (userData?.isAdmin) {
+        await login(data.email, data.password);
+        router.push('/(admin)');
+      } else {
+        setIsLoading(false);
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: "No account found with this email.",
+        });
+      }
+    } else {
+      setIsLoading(false);
+      Toast.show({
+        type: 'error',
+        text1: 'Login Failed',
+        text2: "No account found with this email.",
+      });
+    }
 
-  const onSubmit = (data: any) => {
-    console.log('Login Data:', data);
-    router.push('/(admin)');
   };
 
   return (
@@ -92,16 +115,17 @@ export default function AdminLoginScreen() {
         />
       </View>
       <Pressable onPress={() => router.push('/forget-password')} className="mt-4">
-        <Text className="text-center text-blue-500 text-sm text-right">
+        <Text className=" text-blue-500 text-sm text-right">
           Forget password?
         </Text>
       </Pressable>
 
       <TouchableOpacity
+        disabled={isLoading}
         onPress={handleSubmit(onSubmit)}
-        className="bg-blue-600 mt-6 p-4 rounded-xl shadow-md active:opacity-80"
+        className={`bg-blue-600 mt-6 p-4 rounded-xl shadow-md ${isLoading ? "opacity-50" : 'active:opacity-80'}`}
       >
-        <Text className="text-white text-center font-semibold text-base">Login</Text>
+        <Text className="text-white text-center font-semibold text-base">{isLoading ? "Logging in" : "Login"}</Text>
       </TouchableOpacity>
     </KeyboardAvoidingView>
   );

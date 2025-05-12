@@ -62,6 +62,8 @@ export default function UserList({
         </View>
         <Text style={styles.detail}>Email: {item.email}</Text>
         <Text style={styles.detail}>Phone Number: {item.contactNumber}</Text>
+        {!item.isAdmin && <Text style={styles.detail}>Subscription: {item.isMember ? "Active" : 'Inactive'}</Text>}
+        <Text style={styles.detail}>Role: {item.isAdmin ? "Admin" : 'User'}</Text>
 
       </View>
     );

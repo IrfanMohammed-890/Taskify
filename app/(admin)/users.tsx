@@ -48,12 +48,9 @@ const UserScreen = () => {
 
 
   return (
-    <SafeAreaView style={{ flex: 1, marginTop: 40 }}>
+    <SafeAreaView style={{ flex: 1, marginTop: 40, padding: 10 }}>
       <StatusBar style="dark" />
-      <ScrollView
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
+
         <Text style={styles.title}>Manage Users</Text>
         <UserList
           users={users}
@@ -62,8 +59,7 @@ const UserScreen = () => {
           loadMeditations={loadMeditations}
           loading={loading}
           hasMore={hasMore}
-        />
-      </ScrollView>
+      />
 
     </SafeAreaView>
   );

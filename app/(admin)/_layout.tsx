@@ -9,8 +9,6 @@ export default function AdminLayout() {
   const tabs = [
     { name: 'Home', icon: 'home', link: '/(admin)' },
     { name: 'Features', icon: 'star', link: '/(admin)/features' },
-    // { name: 'Mood', icon: 'happy', link: '/(user)/mood' },
-    // { name: 'Tools', icon: 'construct', link: '/(user)/tools' },
     { name: 'Profile', icon: 'person', link: '/(admin)/profile' },
   ];
 

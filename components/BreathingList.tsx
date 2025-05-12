@@ -55,7 +55,7 @@ const BreathingList: React.FC<BreathingListProps> = ({
   const renderItem = ({ item }: { item: any; }) => (
     <View key={item.id} style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.name}>{item.breathingName}</Text>
+        <Text style={styles.name} textBreakStrategy="balanced" ellipsizeMode="tail">{item.breathingName}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity onPress={() => onEdit(item)} style={{ marginRight: 8 }}>
             <Pencil size={20} color="#3B82F6" />
@@ -139,7 +139,6 @@ export default BreathingList
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 10,
   },
   searchBar: {
     height: 40,
