@@ -70,7 +70,6 @@ export default function LoginScreen() {
               text1: 'Login Successful',
               text2: `Welcome back!`,
             });
-            setIsLoggedIn(true);
             router.replace('/(admin)');
           }
         }
