@@ -13,13 +13,14 @@ import { StatusBar } from 'expo-status-bar';
 import { Controller, useForm } from 'react-hook-form';
 import { Ionicons } from '@expo/vector-icons';
 import Logo from '@/components/Logo';
-import { login } from '@/service/authService';
+import { checkUser, login } from '@/service/authService';
 import Toast from 'react-native-toast-message';
 import { FirebaseError } from 'firebase/app';
 import { useUserAuth } from '@/context/UserAuthContext';
+import { LogOut } from 'lucide-react-native';
 
 export default function LoginScreen() {
-  const { user, loading } = useUserAuth();
+  const { user, setIsLoggedIn } = useUserAuth();
   const router = useRouter();
   const { control, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
@@ -27,20 +28,64 @@ export default function LoginScreen() {
       password: '',
     }
   });
+  const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false);
   const onSubmit = async (data: any) => {
+    setIsLoading(true);
     try {
-      await login(data.email, data.password);
-      Toast.show({
-        type: 'success',
-        text1: 'Login Successful',
-        text2: `Welcome back!`,
-      });
-
-      router.push('/(user)');
+      const userData = await checkUser(data.email);
+      if (userData) {
+        if (!userData?.isAdmin) {
+          const user = await login(data.email, data.password);
+          if (!user.emailVerified) {
+            setIsLoading(false);
+            Toast.show({
+              type: 'error',
+              text1: 'Email Not Verified',
+              text2: 'Please verify your email before logging in.',
+            });
+            return;
+          } else {
+            Toast.show({
+              type: 'success',
+              text1: 'Login Successful',
+              text2: `Welcome back!`,
+            });
+            setIsLoading(false);
+            setIsLoggedIn(true);
+            router.replace('/(user)');
+          }
+        } else {
+          const user = await login(data.email, data.password);
+          if (!user.emailVerified) {
+            setIsLoading(false);
+            Toast.show({
+              type: 'error',
+              text1: 'Email Not Verified',
+              text2: 'Please verify your email before logging in.',
+            });
+            return;
+          } else {
+            setIsLoading(false);
+            Toast.show({
+              type: 'success',
+              text1: 'Login Successful',
+              text2: `Welcome back!`,
+            });
+            setIsLoggedIn(true);
+            router.replace('/(admin)');
+          }
+        }
+      } else {
+        setIsLoading(false);
+        Toast.show({
+          type: 'error',
+          text1: 'Login Failed',
+          text2: "No account found with this email.",
+        });
+      }
     } catch (error: any) {
-      console.log('error', error);
-
+      setIsLoading(false)
       let message = 'Something went wrong. Please try again.';
 
       if (error instanceof FirebaseError) {
@@ -70,6 +115,15 @@ export default function LoginScreen() {
       });
     }
   };
+
+  useEffect(() => {
+    if (user && user?.isAdmin) {
+      router.push('/(admin)');
+    }
+    if (user && !user.isAdmin) {
+      router.push('/(user)');
+    }
+  }, [user])  
 
   return (
     <KeyboardAvoidingView
@@ -145,10 +199,11 @@ export default function LoginScreen() {
       </Pressable>
 
       <TouchableOpacity
+        disabled={isLoading}
         onPress={handleSubmit(onSubmit)}
-        className="bg-blue-600 mt-6 p-4 rounded-xl shadow-md active:opacity-80"
+        className={`bg-blue-600 mt-6 p-4 rounded-xl shadow-md  ${isLoading ? "opacity-40" : "active:opacity-80"}`}
       >
-        <Text className="text-white text-center font-semibold text-base">{loading ? "Logging in" : 'Login'}</Text>
+        <Text className="text-white text-center font-semibold text-base">{isLoading ? "Logging in..." : 'Login'}</Text>
       </TouchableOpacity>
 
       {/* <Pressable onPress={() => router.push('/signup')} className="mt-4"> */}
@@ -165,11 +220,11 @@ export default function LoginScreen() {
       </Pressable>
 
 
-      <Pressable onPress={() => router.push(`/admin-login` as any)} className="mt-4">
+      {/* <Pressable onPress={() => router.push(`/admin-login` as any)} className="mt-4">
         <Text className="text-center text-blue-500 text-sm">
           <Text className="">Admin Login</Text>
         </Text>
-      </Pressable>
+      </Pressable> */}
     </KeyboardAvoidingView>
   );
 }

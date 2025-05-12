@@ -16,10 +16,12 @@ import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import Logo from '@/components/Logo';
-import { signUp } from '@/service/authService';
+import { checkUser, signUp } from '@/service/authService';
 import Toast from 'react-native-toast-message';
 import { createUser } from '@/service/user';
 import { FirebaseError } from 'firebase/app';
+import { sendEmailVerification, signOut } from 'firebase/auth';
+import { auth } from '@/firebase';
 
 
 type FormData = {
@@ -40,30 +42,49 @@ export default function SignupScreen() {
     control,
     handleSubmit,
     watch,
-    formState: { errors, isLoading, isValid },
+    formState: { errors, isValid },
   } = useForm<FormData>();
-
+  const [isLoading, setIsLoading] = useState(false)
   const onSubmit = async (data: FormData) => {
     try {
-      const user = await signUp(data.email, data.password);
-      // ✅ Now delegate to the userService
-      await createUser({
-        uid: user.uid,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        contactNumber: data.phoneNumber,
-      });
+      setIsLoading(true);
+      const userData = await checkUser(data.email);
+      if (!userData) {
+        await signUp(data.email, data.password).then(async (response) => {
+          await createUser({
+            uid: response.uid,
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email,
+            contactNumber: data.phoneNumber,
+          });
+          Toast.show({
+            type: 'success',
+            text1: 'Signup Successful',
+            text2: 'Welcome to safe space 👋',
+          });
 
-      Toast.show({
-        type: 'success',
-        text1: 'Signup Successful',
-        text2: 'Welcome to safe space 👋',
-      });
+          await sendEmailVerification(response);
+          await signOut(auth);
+          Toast.show({
+            type: 'success',
+            text1: 'Please check your email and verify account.',
+          });
 
-      router.push('/login');
+          setIsLoading(false);
+          router.push('/login');
 
+        });
+      } else {
+        setIsLoading(false);
+        Toast.show({
+          type: 'error',
+          text1: 'Signup Error',
+          text2: "Account already register with given email.",
+        });
+      }
     } catch (error: any) {
+      setIsLoading(false);
       let message = 'Something went wrong.';
 
       if (error instanceof FirebaseError) {
@@ -79,6 +100,7 @@ export default function SignupScreen() {
             break;
         }
       }
+
       Toast.show({
         type: 'error',
         text1: 'Signup Failed',
@@ -288,7 +310,7 @@ export default function SignupScreen() {
           disabled={isLoading}
         >
           <Text style={styles.submitText}>
-            {isLoading ? 'Submitting...' : 'Sign UP'}
+            {isLoading ? 'Submitting...' : 'Sign Up'}
           </Text>
         </TouchableOpacity>
 
