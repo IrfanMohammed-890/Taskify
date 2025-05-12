@@ -55,7 +55,7 @@ const MeditationList: React.FC<MeditationListProps> = ({
   const renderItem = ({ item }: { item: any; }) => (
     <View key={item.id} style={styles.card}>
       <View style={styles.cardHeader}>
-        <Text style={styles.title}>{item.meditationName}</Text>
+        <Text style={styles.title} textBreakStrategy="balanced" ellipsizeMode="tail">{item.meditationName}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <TouchableOpacity onPress={() => onEdit(item)} style={{ marginRight: 8 }}>
             <Pencil size={20} color="#3B82F6" />

@@ -71,32 +71,26 @@ export default function MeditationScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, marginTop: 40 }}>
+    <SafeAreaView style={{ flex: 1, marginTop: 40, padding: 10 }}>
       <StatusBar backgroundColor={'dark'} />
-      <ScrollView
-        contentContainerStyle={styles.contentContainer}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.title}>Manage Meditations</Text>
+      <Text style={styles.title}>Manage Meditations</Text>
 
-        <TouchableOpacity style={styles.button} onPress={handleOpenModal}>
-          <Text style={styles.buttonText}>Create Meditation</Text>
-        </TouchableOpacity>
+      <TouchableOpacity style={styles.button} onPress={handleOpenModal}>
+        <Text style={styles.buttonText}>Create Meditation</Text>
+      </TouchableOpacity>
 
-        <MeditationList
-          meditations={meditations}
-          setSearchText={setSearchText}
-          searchText={searchText}
-          loadMeditations={loadMeditations}
-          loading={loading}
-          hasMore={hasMore}
-          onEdit={(meditation) => {
-            setEditingMeditation(meditation);
-            setIsModalVisible(true);
-          }}
-        />
-      </ScrollView>
-
+      <MeditationList
+        meditations={meditations}
+        setSearchText={setSearchText}
+        searchText={searchText}
+        loadMeditations={loadMeditations}
+        loading={loading}
+        hasMore={hasMore}
+        onEdit={(meditation) => {
+          setEditingMeditation(meditation);
+          setIsModalVisible(true);
+        }}
+      />
       <Modal
         visible={isModalVisible}
         animationType="slide"

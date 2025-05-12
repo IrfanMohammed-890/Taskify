@@ -60,7 +60,7 @@ export default function MeditationLocationList({
     return (
       <View style={styles.card}>
         <View style={styles.cardHeader}>
-          <Text style={styles.name}>{item.location_name}</Text>
+          <Text style={styles.name} textBreakStrategy="balanced" >{item.location_name}</Text>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <TouchableOpacity
               onPress={() => {
@@ -158,12 +158,13 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 4,
     elevation: 2,
+    position: "relative"
   },
   cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
   },
   name: {
     fontSize: 18,

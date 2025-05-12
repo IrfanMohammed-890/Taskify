@@ -56,9 +56,9 @@ export default function MeditationLocationScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, marginTop: 40 }}>
+    <SafeAreaView style={{ flex: 1, marginTop: 40, padding: 10 }}>
       <StatusBar backgroundColor={'dark'} />
-      <ScrollView contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
+
         <Text style={styles.title}>Manage Locations</Text>
 
         <TouchableOpacity style={styles.button} onPress={handleOpenModal}>
@@ -77,7 +77,7 @@ export default function MeditationLocationScreen() {
             setIsModalVisible(true);
           }}
         />
-      </ScrollView>
+
 
       <Modal
         visible={isModalVisible}
