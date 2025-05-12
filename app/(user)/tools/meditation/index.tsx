@@ -1,56 +1,112 @@
+import { useUserAuth } from "@/context/UserAuthContext";
+import { fetchMeditationList } from "@/service/meditation";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useNavigation } from "expo-router";
-import React from "react";
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Pressable } from "react-native";
+import { router } from "expo-router";
+import { DocumentData, QueryDocumentSnapshot } from "firebase/firestore";
+import { Lock } from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+} from "react-native";
+import Toast from "react-native-toast-message";
 
-// Sample data with 3 items
-const data = [
-  {
-    id: 1,
-    title: "Mindful Breathing",
-    description:
-      "Learn how to focus on your breath to calm the mind and improve awareness. This is a foundational meditation technique useful for stress reduction.",
-    steps: ["Inhale slowly", "Hold for 4 seconds", "Exhale gently"],
-  },
-  {
-    id: 2,
-    title: "Body Scan",
-    description:
-      "Bring attention to each part of your body from head to toe. This helps in relaxing muscles and releasing tension stored in the body.",
-    steps: ["Focus on head", "Relax shoulders", "Scan down to feet"],
-  },
-  {
-    id: 3,
-    title: "Loving-Kindness",
-    description:
-      "Practice compassion by sending thoughts of love and kindness to yourself and others. A powerful way to improve emotional well-being.",
-    steps: ["Repeat kind phrases", "Think of a loved one", "Extend to all beings"],
-  },
-];
+const PAGE_SIZE = 20;
 
 const MeditationScreen = () => {
-  const navigation = useNavigation()
+  const { user } = useUserAuth()
+  const [meditations, setMeditations] = useState<any[]>([]);
+  const [lastDoc, setLastDoc] = useState<QueryDocumentSnapshot<DocumentData> | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+
+  const loadMeditations = async (reset = false) => {
+    if (loading) return;
+    try {
+      setLoading(true);
+      const response = await fetchMeditationList(PAGE_SIZE, reset ? null : lastDoc);
+
+      if (reset) {
+        setMeditations(response.data || []);
+      } else {
+        setMeditations(prev => [...prev, ...(response.data || [])]);
+      }
+
+      setLastDoc(response.lastDoc);
+      setHasMore((response.data || []).length === PAGE_SIZE);
+    } catch (error) {
+      console.error("Error loading meditations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadMeditations(true);
+  }, []);
+
+  const renderItem = ({ item }: { item: any; }) => (
+    <TouchableOpacity
+      key={item.id}
+      style={styles.card}
+      onPress={() => {
+        if (!user?.isMember && item.isPaid) {
+          router.push('/(user)/pricing');
+          return Toast.show({
+            type: 'error',
+            text1: 'Need subscription',
+            text2: 'Subscription is required for premium.',
+          });
+        } else {
+          router.push(`/tools/meditation/${item.id}`);
+        }
+      }}
+    >
+      <View style={styles.cardContent}>
+        <Text style={styles.cardTitle}>{item.meditationName}</Text>
+        <View style={styles.cardDescriptionRow}>
+          <Text style={styles.cardDescription} numberOfLines={3}>
+            {item.description}
+          </Text>
+          {!user?.isMember && item.isPaid ? (
+            <Lock size={24} color="#9ca3af" />
+          ) : (
+              <Ionicons name="chevron-forward-outline" size={18} color="#4f46e5" />
+          )}
+
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.heading}>Meditations</Text>
 
-      {data.map((item) => (
-        <TouchableOpacity
-          key={item.id} style={styles.card}
-          onPress={() => router.push(`/tools/meditation/${item.id}` as any)}
-        >
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            <View style={styles.cardDescriptionRow}>
-              <Text style={styles.cardDescription} numberOfLines={3}>
-                {item.description}
-              </Text>
-              <Ionicons name="chevron-forward-outline" size={18} color="#4f46e5" />
-            </View>
+      <FlatList
+        data={meditations}
+        renderItem={renderItem}
+        keyExtractor={(item, index) => item.id || index.toString()}
+        ListFooterComponent={
+          <View style={{ marginTop: 16, marginBottom: 32, alignItems: "center" }}>
+            {loading ? (
+              <ActivityIndicator size="small" color="#4f46e5" />
+            ) : hasMore ? (
+              <TouchableOpacity
+                onPress={() => loadMeditations()}
+                style={styles.loadMoreButton}
+              >
+                <Text style={styles.loadMoreText}>Load More</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
-        </TouchableOpacity>
-      ))}
-    </ScrollView>
+        }
+      />
+    </View>
   );
 };
 
@@ -61,7 +117,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
     paddingHorizontal: 16,
-    paddingVertical: 24,
+    paddingTop: 24,
   },
   heading: {
     fontSize: 24,
@@ -95,5 +151,16 @@ const styles = StyleSheet.create({
     color: "#4b5563",
     flex: 1,
     marginRight: 8,
+  },
+  loadMoreButton: {
+    backgroundColor: "#4f46e5",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  loadMoreText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
   },
 });

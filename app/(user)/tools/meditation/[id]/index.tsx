@@ -1,47 +1,74 @@
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
-import { router, useLocalSearchParams, useNavigation } from "expo-router";
-import React from "react";
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from "react-native";
+import { router, useLocalSearchParams } from "expo-router";
+import React, { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { getMeditationById } from "@/service/meditation";
 
 export default function MeditationDetailsScreen() {
-  const { id } = useLocalSearchParams(); // 👈 Get the ID from the URL
-  const navigation = useNavigation();
+  const [meditationData, setMeditationData] = useState<any>(null);
+  const { id } = useLocalSearchParams();
+  const [loading, setLoading] = useState(false);
+
+  const getMeditationDetails = async (id: string) => {
+    setLoading(true);
+    const data = await getMeditationById(id);
+    setMeditationData(data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (id) {
+      getMeditationDetails(id as string);
+    }
+  }, [id]);
+
+  if (loading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" color="#4f46e5" />
+        <Text className="mt-4 text-gray-500">Loading meditation...</Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView className="flex-1 bg-white px-4 py-6">
-      <View className="mb-4">
-        <TouchableOpacity onPress={() => router.push('/tools/meditation')}>
-          <Ionicons name="arrow-back" size={24} color="black" />
+      {/* Back button */}
+      <View className="mb-6">
+        <TouchableOpacity
+          onPress={() => router.push("/tools/meditation")}
+          className="w-10 h-10 rounded-full bg-gray-100 items-center justify-center"
+        >
+          <Ionicons name="arrow-back" size={20} color="#4B5563" />
         </TouchableOpacity>
       </View>
-      <Text className="text-2xl font-bold text-indigo-700 mb-4">
-        Mediation Guide title
+
+      {/* Meditation Title */}
+      <Text className="text-3xl font-bold text-indigo-700 mb-4">
+        {meditationData?.meditationName}
       </Text>
-      <View className="text-justify pb-4">
-        Lorem ipsum dolor sit amet consectetur adipisicing elit. Nostrum, in nemo qui, consequatur velit, quae possimus natus esse incidunt ab tempore aut inventore architecto adipisci perferendis expedita. A impedit nesciunt corporis eum accusantium ut, fugiat excepturi iusto dolorum neque unde odit architecto eveniet optio deleniti vitae accusamus explicabo molestiae non laborum, deserunt libero fuga consequatur? Qui blanditiis aut et.
+
+      {/* Description */}
+      <View className=" rounded-xl p-4 mb-6">
+        <Text className="text-base text-gray-700 leading-relaxed">
+          {meditationData?.description}
+        </Text>
       </View>
-      <View className="space-y-4">
-        <Text className="text-base text-gray-700">
-          1. Find a quiet and comfortable place to sit.
-        </Text>
-        <Text className="text-base text-gray-700">
-          2. Sit with your spine straight and shoulders relaxed.
-        </Text>
-        <Text className="text-base text-gray-700">
-          3. Close your eyes gently.
-        </Text>
-        <Text className="text-base text-gray-700">
-          4. Take a few deep breaths — inhale slowly through your nose, hold for a second, and exhale through your mouth.
-        </Text>
-        <Text className="text-base text-gray-700">
-          5. Bring your attention to your breath. If your mind wanders, gently bring it back to your breath.
-        </Text>
-        <Text className="text-base text-gray-700">
-          6. Continue this for 5–10 minutes, or as long as you feel comfortable.
-        </Text>
-        <Text className="text-base text-gray-700">
-          7. When you're ready, slowly open your eyes and return to the moment.
-        </Text>
+
+      {/* Steps */}
+      <Text className="text-xl font-semibold text-indigo-600 mb-2">Steps</Text>
+      <View className="space-y-3">
+        {meditationData?.steps?.map((step: string, index: number) => (
+          <View
+            key={index}
+            className="flex-row items-start bg-indigo-50 rounded-lg p-3"
+          >
+            <Text className="font-bold text-indigo-700 mr-2">{index + 1}.</Text>
+            <Text className="text-gray-700 flex-1">{step}</Text>
+          </View>
+        ))}
       </View>
     </ScrollView>
+
   );
 }

@@ -99,13 +99,16 @@ export default function CreateMeditationLocationForm({
           <TextInput
             style={styles.input}
             placeholder="Enter latitude"
-            keyboardType="numeric"
-            value={value}
+            keyboardType="numbers-and-punctuation" // allows decimal + negative
+            value={value?.toString() || ''}
             onChangeText={onChange}
+            autoCapitalize="none"
           />
         )}
       />
-      {errors.latitude && <Text style={styles.errorText}>{errors.latitude.message}</Text>}
+      {errors.latitude && (
+        <Text style={styles.errorText}>{errors.latitude.message}</Text>
+      )}
 
       {/* Longitude */}
       <Controller
@@ -122,13 +125,17 @@ export default function CreateMeditationLocationForm({
           <TextInput
             style={styles.input}
             placeholder="Enter longitude"
-            keyboardType="numeric"
-            value={value}
+            keyboardType="numbers-and-punctuation"
+            value={value?.toString() || ''}
             onChangeText={onChange}
+            autoCapitalize="none"
           />
         )}
       />
-      {errors.longitude && <Text style={styles.errorText}>{errors.longitude.message}</Text>}
+      {errors.longitude && (
+        <Text style={styles.errorText}>{errors.longitude.message}</Text>
+      )}
+
 
       {/* Submit Button */}
       <TouchableOpacity
