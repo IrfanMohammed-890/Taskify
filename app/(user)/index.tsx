@@ -1,9 +1,13 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 import { StatusBar } from 'expo-status-bar';
 import MoodSelection from '@/components/MoodSelection';
 import JournalCard from '@/components/JournalCard';
+import CustomMap from '@/components/CustomMap';
+import { getMeditationLocationNamesList } from '@/service/meditation-location';
+import { useUserAuth } from '@/context/UserAuthContext';
+import { getTodayMood } from '@/service/mood';
+import ContactConsultantCard from '@/components/ContactConsultantCard';
 
 // Get greeting based on current time
 function getGreeting(): string {
@@ -15,24 +19,53 @@ function getGreeting(): string {
 
 export default function UserIndex() {
   const greeting = getGreeting();
+  const { user, loading, loginData } = useUserAuth();
+  const [locations, setLocations] = useState<any>([]);
+  const [isMoodSelectionAvailable, setIsMoodSelectionAvailable] = useState(true);
+  const [isMoodSelectionLoading, setIsMoodSelectionLoading] = useState(false);
+  const loadMeditationLocations = async () => {
+    const data = await getMeditationLocationNamesList();
+    setLocations(data);
+  };
+
+  const checkIsMoodSelected = async () => {
+    setIsMoodSelectionLoading(true);
+    const isMoodSelected = await getTodayMood(loginData.uid);
+    setIsMoodSelectionAvailable(isMoodSelected.moodSelection);
+    setIsMoodSelectionLoading(false);
+  };
+
+  useEffect(() => {
+    loadMeditationLocations();
+    checkIsMoodSelected();
+  }, []);
 
   return (
-    <ScrollView className="bg-white flex-1 px-4 pt-6" style={styles.container}>
+    <ScrollView className="bg-white flex-1 px-4 mt-10" style={styles.container}>
       <StatusBar style="dark" />
       <View className="mb-6 mt-6 gap-3 ">
         <Text className="text-indigo-600 text-3xl font-bold">{greeting} 👋</Text>
-        <Text className="text-violet-600 text-3xl font-semibold mt-1">Krishna!</Text>
+        <Text className="text-violet-600 text-3xl font-semibold mt-1 ">{user?.firstName
+          ? user.firstName.charAt(0).toUpperCase() + user.firstName.slice(1)
+          : ''}!</Text>
         <Text className="text-gray-500 mt-1">Hope you're having a great day!</Text>
       </View>
 
-      <MoodSelection />
+      {!isMoodSelectionLoading && isMoodSelectionAvailable && <MoodSelection
+        checkIsMoodSelected={checkIsMoodSelected}
+      />}
 
-      <JournalCard
-        id={`1`}
-        title='Peace mind helps you to grow'
-        description={`Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry' s standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.`}
-      />
+      <Text className='text-indigo-600 text-xl font-bold py-4'>Meditations Location</Text>
 
+      <View style={{ flex: 1 }} className='min-h-[250px]'>
+        <CustomMap
+          locations={locations || []}
+        />
+      </View>
+
+      <View style={{ marginTop: 20 }}>
+        <ContactConsultantCard />
+      </View>
     </ScrollView>
   );
 }

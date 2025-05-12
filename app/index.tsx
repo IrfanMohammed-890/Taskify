@@ -8,8 +8,20 @@ import "../firebase"
 
 const { width } = Dimensions.get('window');
 import { LinearGradient } from "expo-linear-gradient";
+import { useUserAuth } from '@/context/UserAuthContext';
 export default function Index() {
+
+  const { user } = useUserAuth();
   const router = useRouter();
+
+  useEffect(() => {
+    if (user && user?.isAdmin) {
+      router.push('/(admin)');
+    }
+    if (user && !user.isAdmin) {
+      router.push('/(user)');
+    }
+  }, [user]) 
 
   return (
     <LinearGradient

@@ -43,7 +43,7 @@ export default function ToolsIndex() {
             <TouchableOpacity
               onPress={() => router.push(tool.route as any)}
               style={{
-                backgroundColor: "purple",
+                backgroundColor: "#3730a3",
                 paddingHorizontal: 20,
                 paddingVertical: 10,
                 alignSelf: "flex-start",
