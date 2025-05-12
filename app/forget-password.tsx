@@ -1,27 +1,47 @@
-import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Pressable,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Pressable, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { Controller, useForm } from 'react-hook-form';
-import { Ionicons } from '@expo/vector-icons';
 import Logo from '@/components/Logo';
+import { router } from 'expo-router';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '@/firebase';
+import Toast from 'react-native-toast-message';
+import { checkUser } from '@/service/authService';
 
 export default function ForgetPasswordScreen() {
-  const router = useRouter();
   const { control, handleSubmit, formState: { errors } } = useForm();
-  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false); // Track loading state
 
-  const onSubmit = (data: any) => {
-    console.log('Login Data:', data);
-    router.push('/reset-password');
+  const onSubmit = async (data: any) => {
+    setLoading(true);
+    try {
+      const userData = await checkUser(data.email);
+      // Send the reset email
+      if (userData) {
+        await sendPasswordResetEmail(auth, data.email);
+        Toast.show({
+          type: 'success',
+          text1: 'Password reset',
+          text2: `Check your email to change password!`,
+        });
+        router.push('/login');
+      } else {
+        setLoading(false);
+        Toast.show({
+          type: 'error',
+          text1: 'Password reset',
+          text2: "No account found with this email.",
+        });
+      }
+    } catch (error: any) {
+      Toast.show({
+        type: 'error',
+        text1: 'Password reset fail',
+        text2: `Something went wrong try again`,
+      });
+    }
+    setLoading(false);
   };
 
   return (
@@ -68,12 +88,13 @@ export default function ForgetPasswordScreen() {
 
       <TouchableOpacity
         onPress={handleSubmit(onSubmit)}
-        className="bg-blue-600 mt-6 p-4 rounded-xl shadow-md active:opacity-80"
+        disabled={loading} // Disable the button while loading
+        className={`bg-blue-600 mt-6 p-4 rounded-xl shadow-md active:opacity-80 ${loading ? 'opacity-50' : ''}`}
       >
-        <Text className="text-white text-center font-semibold text-base">Forget password</Text>
+        <Text className="text-white text-center font-semibold text-base">{loading ? 'Sending...' : 'Forget password'}</Text>
       </TouchableOpacity>
 
-      <Pressable onPress={() => router.push('/login')} className="mt-4">
+      <Pressable onPress={() => router.replace('/login')} className="mt-4">
         <Text className="text-center text-blue-500 text-sm">
           Already have an account? <Text className="underline">Login</Text>
         </Text>
