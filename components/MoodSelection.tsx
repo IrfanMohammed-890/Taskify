@@ -9,7 +9,7 @@ export default function MoodSelection({ checkIsMoodSelected }: {
   checkIsMoodSelected: () => void;
 }) {
 
-  const { loginData } = useUserAuth();
+  const { loginData, getAISuggestion } = useUserAuth();
 
   const moodIcons = [
     { id: 'happy', icon: <Entypo name="emoji-happy" size={50} color="green" />, label: 'Happy' },
@@ -17,6 +17,8 @@ export default function MoodSelection({ checkIsMoodSelected }: {
     { id: 'angry', icon: <FontAwesome5 name="angry" size={50} color="red" />, label: 'Angry' },
     { id: 'neutral', icon: <Entypo name="emoji-neutral" size={50} color="blue" />, label: 'Neutral' },
   ];
+
+
 
   const handleMoodSelect = async (mood: string) => {
     try {
@@ -26,6 +28,7 @@ export default function MoodSelection({ checkIsMoodSelected }: {
         type: 'success',
         text2: `You're ${mood} today.`,
       });
+      getAISuggestion(mood)
     } catch (error) {
       Toast.show({
         type: 'error',
